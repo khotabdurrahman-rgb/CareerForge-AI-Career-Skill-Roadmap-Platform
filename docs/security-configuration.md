@@ -18,7 +18,9 @@ The default H2 application starts without an OpenAI API key or SMTP configuratio
 | `SMTP_USERNAME`, `SMTP_PASSWORD` | Empty; provider credentials |
 | `SMTP_AUTH`, `SMTP_STARTTLS` | `true` |
 | `MAIL_FROM` | `careerforge@localhost`; replace for real delivery |
-| `APP_BASE_URL` | `http://localhost:8090`; origin for email links |
+| `APP_BASE_URL` | Email-link origin; defaults to Render's `RENDER_EXTERNAL_URL`, otherwise `http://localhost:8090` |
+| `AUTH_LOGIN_LIMIT`, `AUTH_LOGIN_WINDOW_MS` | 20 sign-in requests per client IP per 900000 ms (15 minutes) |
+| `AUTH_REGISTRATION_LIMIT`, `AUTH_REGISTRATION_WINDOW_MS` | 10 registration requests per client IP per 3600000 ms (one hour) |
 
 For private local mail testing, from the workspace:
 
@@ -34,6 +36,14 @@ Alternatively use Maven with `-Dspring-boot.run.profiles=smtp-file`; combine wit
 Passwords use BCrypt; password hashes and session versions are omitted from normal account JSON. Login rotates the session; logout invalidates it. Session cookies are HttpOnly/SameSite Strict with a 60-minute idle timeout. Password reset increments the user's session version so existing sessions can be rejected. Account tokens have a unique hash, purpose, expiry, and used flag; raw tokens belong only in email/private local files. Account-discovery responses stay generic.
 
 Owned records require ownership checks; administrator routes require `ADMIN`. The request filter rejects cross-site mutations. Use the application's same-origin URL and retain cookies in Postman. HTTPS and deployment controls require environment-specific setup. These descriptions do not claim a security audit.
+
+Login/registration limits apply before JSON validation, count successful and failed requests, and return JSON 429 plus `Retry-After` seconds. Buckets are separate by operation and client IP; rotating email addresses or cookies does not reset them. The limiter caps active buckets at 10000 and uses each bucket's own expiry. It is in-memory, resets on process restart, and is not distributed across instances. School networks sharing one public IP may need higher configured budgets. For multiple instances, use a shared limiter or edge protection. Forwarded headers must only be accepted behind the host's trusted proxy; never expose the public-profile port directly with arbitrary forwarded headers.
+
+## Health and monitoring
+
+Only `/actuator/health`, `/actuator/health/liveness`, and `/actuator/health/readiness` are publicly exposed. Group probes contain status only; the root also lists group names, without component, database, filesystem, or credential details. Readiness includes the database; liveness does not. SMTP and AI are optional and are not contacted by these health probes. Environment, metrics, heap dumps, and endpoint discovery are not exposed. See [Spring Boot health documentation](https://docs.spring.io/spring-boot/3.5/reference/actuator/endpoints.html).
+
+The internal Micrometer counter `careerforge.auth.rate_limited` uses only the bounded operation label (`login` or `registration`), never email/IP labels. Public-profile web/SQL logging is restrained to avoid logging form bodies and queries at DEBUG. No external alerting account has been provisioned; configure your host's health check and an uptime alert separately.
 
 ## AI data flow
 

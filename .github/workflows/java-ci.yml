@@ -21,3 +21,5 @@ jobs:
           trap 'docker logs careerforge; docker stop careerforge' EXIT
           curl --fail --silent --show-error --retry 60 --retry-delay 2 --retry-all-errors --retry-max-time 180 --connect-timeout 3 --max-time 5 http://localhost:8090/api/auth/config > /tmp/config.json
           node -e 'const c=require("/tmp/config.json"); if(c.demoEnabled !== false) process.exit(1);'
+          curl --fail --silent --show-error http://localhost:8090/actuator/health/readiness > /tmp/health.json
+          node -e 'const h=require("/tmp/health.json"); if(h.status !== "UP" || Object.keys(h).length !== 1) process.exit(1);'

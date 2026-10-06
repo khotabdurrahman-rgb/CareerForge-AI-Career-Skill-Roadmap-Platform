@@ -2,6 +2,10 @@
 
 V2 screenshots were captured on **2026-10-06** from the running app with Playwright. `v2-{route}-{width}.png` covers 15 workspace routes at 1440, 390, and 320 pixels; recovery pages use the same widths. These are actual UI captures, not mockups. The original 31-check browser suite was rerun successfully on V2 and refreshed its original filenames. The expanded V2 suite passed 185 checks.
 
+## Hosted public-site checks
+
+On 2026-10-07, the public-mode browser suite passed 186 checks. Actual captures are in `public/`, with synthetic QA accounts rather than the disabled demo accounts. Example: [hosted mobile dashboard](public/v2-dashboard-390.png), [hosted resume builder](public/v2-resume-1440.png), and [hosted assessment result](public/v2-assessment-result.png). Provider keys and raw email tokens are not shown.
+
 ## V2 highlights
 
 - [Desktop workspace](v2-dashboard-1440.png) and [mobile workspace](v2-dashboard-390.png)

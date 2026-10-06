@@ -2578,6 +2578,28 @@
           }
         }
       ]
+    },
+    {
+      "name": "Monitoring",
+      "item": [
+        {
+          "name": "Database-aware readiness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/actuator/health/readiness",
+            "description": "Public minimal health status; 200 UP or 503 DOWN. No account or connection details."
+          }
+        },
+        {
+          "name": "Application liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/actuator/health/liveness"
+          }
+        }
+      ]
     }
   ]
 }

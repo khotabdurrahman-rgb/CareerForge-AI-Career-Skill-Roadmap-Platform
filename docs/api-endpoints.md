@@ -212,6 +212,12 @@ Resume JSON is limited to 20000 encoded characters; a nonblank website must be a
 
 PDF clients should send `Accept: application/pdf, application/json` (or `*/*`) so successful PDF responses and JSON errors are accepted. A JSON-only Accept header can produce 406.
 
+## Authentication limits and monitoring
+
+POST login and registration use separate client-IP budgets before parsing/validation (defaults: 20/15 minutes and 10/hour). A blocked request returns JSON 429 with `Retry-After` seconds; logout or changing email does not clear it. Recovery and token endpoints retain their existing limits. Limits are per process, not cluster-wide.
+
+Public GET `/actuator/health/readiness` returns status-only 200/UP or 503/DOWN and checks database availability. GET `/actuator/health/liveness` checks application liveness without optional SMTP/AI calls. `/actuator/health` also lists the health group names. Other management endpoints and details are not exposed.
+
 ## Postman workflow
 
 Import [the collection](CareerForge.postman_collection.json), retain cookies, and run the Student folder after login. Collection variables hold the base URL, credentials, and record IDs. Skill/career catalog requests and the dashboard capture usable IDs; creation requests capture IDs for their temporary records. Review those IDs before deleting. The registration example creates a new account. Admin operations change data; use the temporary career/resource examples. Run Logout before the isolated unauthenticated request and sign in as a student before the forbidden admin request.

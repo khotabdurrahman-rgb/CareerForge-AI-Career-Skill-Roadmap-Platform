@@ -79,12 +79,15 @@ The backend is rooted at `backend/pom.xml`. The earlier `STEP-1-ARCHITECTURE.md`
 - [V2 changelog](docs/changelog.md)
 - [Configuration and security](docs/security-configuration.md)
 - [Public website deployment](docs/public-deployment.md)
+- [Render launch checklist](docs/render-launch-checklist.md)
 - [Screenshot evidence](docs/screenshots/README.md)
 - [MySQL schema](database/schema.sql) and [sample data](database/sample-data.sql)
 
 Authentication uses a server session cookie and BCrypt password hashes. Postman retains the session cookie. Use the backend's same-origin application URL: mutating cross-origin browser requests are rejected by the request security filter.
 
 ## Verification status
+
+**Public-site hardening, 2026-10-07:** 48 Java tests pass. The hosted app passes 142 API and 186 browser checks using synthetic QA accounts; the updated local app passes 142 API and 31 original browser checks. New changes add authentication throttling, database-aware readiness, private management settings, and automatic Render email-link URLs. See the [Render checklist](docs/render-launch-checklist.md) for remaining credential/storage setup.
 
 **2026-10-06:** 41 Java tests pass. Both persistent H2 and the MySQL profile (MariaDB 10.4) pass 17 existing and 141 V2 live API checks. Chromium passes 185 V2 checks plus 31 original regression checks, with desktop/390px/320px screenshots. Existing V1 data was retained through additive migrations, and both profiles pass Hibernate validation. PDF checks cover selectable Unicode text, section visibility, wrapping, and pagination. See [verification](docs/verification.md) for scope. Real OpenAI and external SMTP require credentials and were not called; provider behavior is tested through a local HTTP fixture and private file-mail tests. Oracle MySQL and the Postman collection were not separately executed.
 

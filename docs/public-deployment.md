@@ -8,7 +8,7 @@ GitHub hosts the project source, not a running Java server. Deploy the root Dock
 2. Connect this GitHub repository and select branch `main`.
 3. Select Docker runtime, repository-root context, and `./Dockerfile`.
 4. Set `SPRING_PROFILES_ACTIVE=public,mysql`, `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD` for an external MySQL database. Require database TLS according to your provider; do not disable certificate verification.
-5. Set `APP_BASE_URL` to the HTTPS URL Render assigns, and health-check path `/api/auth/config`.
+5. Set `APP_BASE_URL` to the HTTPS URL Render assigns (or use the automatic Render URL fallback), and health-check path `/actuator/health/readiness`.
 6. Choose and confirm your hosting plan yourself. No paid resources have been created by this project setup.
 7. Deploy, create your own student account, and verify login, assessment submission, planner saves, and PDF download. Restart the service and confirm saved data survives before inviting students.
 8. Optional: set AI/SMTP secrets only in the host's environment settings. See [configuration](security-configuration.md).

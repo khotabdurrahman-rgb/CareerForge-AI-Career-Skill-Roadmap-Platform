@@ -1,5 +1,13 @@
 # Changelog
 
+## Public-site hardening - 2026-10-07
+
+- Login/registration IP budgets before parsing, separate operation buckets, and 429 `Retry-After` responses.
+- Bounded limiter storage, per-bucket expiry, and atomic concurrent admission checks.
+- Minimal Actuator health probes with database-aware readiness; private management endpoints remain unexposed.
+- Internal rate-limit counters without email/IP labels, restrained public logging, and automatic Render email-link URL fallback.
+- Render launch checklist, public-mode browser QA, and seven additional regression tests.
+
 ## V2 - 2026-10-06
 
 - Flyway versioned migrations and Hibernate schema validation. Compatible existing V1 databases are baselined at version 1 before V2; records are retained.

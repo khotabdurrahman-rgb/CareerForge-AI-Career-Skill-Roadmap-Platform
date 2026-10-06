@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const base = process.env.CAREERFORGE_URL || 'http://localhost:8090';
-const screenshots = path.resolve(__dirname, '../docs/screenshots');
+const publicMode = process.env.CAREERFORGE_PUBLIC === '1';
+const screenshots = path.resolve(__dirname, publicMode ? '../docs/screenshots/public' : '../docs/screenshots');
 const failures = [];
 let checks = 0;
 const check = (value, label) => { assert.ok(value, label); checks++; };
@@ -58,10 +59,18 @@ async function main() {
   page.on('pageerror', error => failures.push(error.message));
   page.on('response', response => { if (response.status() >= 500) failures.push(`${response.status()} ${response.url()}`); });
   try {
-    await page.goto(base, { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'Student demo', exact: true }).click();
+    if (publicMode) {
+      const registered = await context.request.post(base + '/api/auth/register', { data: {
+        name: 'Public Browser QA', email: `public-view-${randomUUID()}@example.org`, password: 'PublicQaPassword123!'
+      } });
+      check(registered.ok(), 'Public workflow account registered');
+      await page.goto(base + '/#dashboard', { waitUntil: 'networkidle' });
+    } else {
+      await page.goto(base, { waitUntil: 'networkidle' });
+      await page.getByRole('button', { name: 'Student demo', exact: true }).click();
+    }
     await page.locator('.metrics').waitFor();
-    check((await context.request.get(base + '/api/me')).ok(), 'Demo login uses actual session');
+    check((await context.request.get(base + '/api/me')).ok(), 'Login uses actual session');
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: width === 1440 ? 1050 : 844 });
       for (const name of routes) {

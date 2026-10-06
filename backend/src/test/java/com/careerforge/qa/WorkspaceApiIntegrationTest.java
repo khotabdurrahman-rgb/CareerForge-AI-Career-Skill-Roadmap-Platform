@@ -31,7 +31,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:qa;MODE=MySQL;DB_CLOSE_DELAY=-1",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "careerforge.seed-demo=false"
+        "careerforge.seed-demo=false",
+        "careerforge.auth.registration-limit=100",
+        "careerforge.auth.login-limit=100"
 })
 @AutoConfigureMockMvc
 @Transactional

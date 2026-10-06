@@ -1,5 +1,15 @@
 # Manual verification checklist
 
+## Public-site hardening - 2026-10-07
+
+The full Maven test run passes **48 tests** with zero failures/errors. Seven new checks cover per-IP operation isolation, validation-before-throttle ordering, retry headers, concurrent admission, bounded bucket cleanup, minimal health exposure, and database DOWN/readiness versus liveness behavior. The existing 41 tests remain passing.
+
+Live API suite: **142 PASS** against the public Render URL and **142 PASS** against the updated local H2 app, with zero paid AI requests. The public run creates two synthetic QA accounts and only mutates owned QA records. The original local browser suite also passes **31 checks** after the changes.
+
+Public-mode Chromium browser suite: **186 PASS**, covering 15 workspace routes and four recovery routes at 1440, 390, and 320 pixels plus quiz, planner, resume/PDF, comparison, recommendations, and progress workflows. No captured browser exceptions or HTTP 5xx errors. It creates two additional synthetic QA accounts and stores screenshots under `docs/screenshots/public`; no email tokens or provider credentials are captured.
+
+SMTP delivery, a real OpenAI call, external database durability, uptime-alert delivery, and persistence after a hosted restart remain unverified without owner configuration. No production restart or storage migration was performed during the initial live checks. The user subsequently authorized publishing with possible temporary-data resets; the new health endpoints and auth limits require deployment of this update.
+
 ## V2 executed evidence - 2026-10-06
 
 - Maven `package` succeeds: **41 tests, zero failures/errors** across seven suites, including the 21 original regression tests and 20 V2/PDF tests. Reports: `backend/target/surefire-reports`.
