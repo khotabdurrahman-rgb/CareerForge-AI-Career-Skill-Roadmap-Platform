@@ -19,6 +19,12 @@ The public profile enables secure cookies and trusted-proxy forwarding and disab
 
 Render's [free services](https://render.com/docs/free) have ephemeral filesystems and may sleep. The default H2 file database loses changes when that environment restarts or redeploys. A free H2 deployment is only disposable testing, not durable student storage. Use external MySQL or a paid persistent disk; persistent disks and paid services require explicit budget approval. With a disk, use the public profile, mount at `/app/data`, and keep the H2 URL unchanged.
 
-The Docker image contains code, bundled fonts, migrations, and test sources during its build stage. It does not copy `.env`, local database files, private mail, or workspace tools. Java runs as a non-root user. No Docker engine was available in the development environment, so the container build must be verified by the host; Maven and the Java application are tested separately.
+The Docker image contains code, bundled fonts, migrations, and test sources during its build stage. It does not copy `.env`, local database files, private mail, or workspace tools. Java runs as a non-root user. GitHub Actions successfully built the Docker image and passed all 41 Java tests on 2026-10-06. The workflow also checks public-profile startup with bounded readiness retries; see its latest run for the result.
+
+## GitHub Actions
+
+The **Java and Docker verification** workflow runs on pushes and pull requests targeting `main`. It can also be started from the repository's Actions tab using **Run workflow**. The `actions/new` page offers templates; no additional template is needed for this project.
+
+Actions verifies the container but does not provide a permanent public Java server. A green workflow is not a live website URL. Deploy to a hosting provider using the steps above.
 
 After a successful deploy, place the actual HTTPS URL in GitHub's About/Website field and README. Do not advertise a guessed `onrender.com` address as live.

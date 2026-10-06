@@ -1,5 +1,6 @@
 name: Java and Docker verification
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -18,5 +19,5 @@ jobs:
         run: |
           docker run -d --name careerforge -p 8090:8090 careerforge:ci
           trap 'docker logs careerforge; docker stop careerforge' EXIT
-          curl --fail --retry 30 --retry-delay 2 --retry-connrefused http://localhost:8090/api/auth/config > /tmp/config.json
+          curl --fail --silent --show-error --retry 60 --retry-delay 2 --retry-all-errors --retry-max-time 180 --connect-timeout 3 --max-time 5 http://localhost:8090/api/auth/config > /tmp/config.json
           node -e 'const c=require("/tmp/config.json"); if(c.demoEnabled !== false) process.exit(1);'
