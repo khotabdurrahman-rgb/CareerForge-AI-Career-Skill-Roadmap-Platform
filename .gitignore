@@ -1,0 +1,29 @@
+# Java / Maven
+**/target/
+*.class
+*.log
+
+# Persistent local databases
+*.mv.db
+*.trace.db
+*.lock.db
+backend/data/
+data/
+
+# Local tools and credentials
+.tools/
+.env
+.env.*
+!.env.example
+*.local.properties
+
+# Editors and operating systems
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Frontend build dependencies
+node_modules/
+dist/
