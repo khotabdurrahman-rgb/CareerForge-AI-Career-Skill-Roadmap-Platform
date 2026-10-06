@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "CareerForge local API",
-    "description": "Session-cookie API examples. On 2026-10-06, separate qa/check-api.cjs checks passed 17 assertions each on H2 and the MySQL profile backed by MariaDB 10.4. This Postman collection has not been executed as test evidence. Mutations change local demo records. Retain Postman's cookie jar. Catalog/dashboard requests capture IDs. Inspect variables before deleting. Registration creates an additional account. Use baseUrl http://localhost:8091 for the MariaDB compatibility instance. Requests only target the selected local application.",
+    "name": "CareerForge V1 and V2 local API",
+    "description": "CareerForge V1/V2 session-cookie examples; this collection has not been executed as test evidence. Historical V1 QA counts are documented separately. Retain cookies, log in before protected requests, and inspect captured IDs before mutations. V2 recovery tokens come only from private smtp-file messages or actual mail; never export populated tokens or API keys. Password reset changes credentials and invalidates sessions: use a disposable account. Mentor requires optional server-side provider configuration and may consume provider quota. Set comparison IDs and planner dates from actual data. Run folders selectively; they change local records.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -62,6 +62,61 @@
     },
     {
       "key": "resourceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "quizSessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "quizAnswers",
+      "value": "[]",
+      "type": "string"
+    },
+    {
+      "key": "goalId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "recommendationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "recoveryToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "newPassword",
+      "value": "Replace123!",
+      "type": "string"
+    },
+    {
+      "key": "weekStart",
+      "value": "2026-10-05",
+      "type": "string"
+    },
+    {
+      "key": "dueDate",
+      "value": "2026-10-06",
+      "type": "string"
+    },
+    {
+      "key": "compareLeft",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "compareRight",
       "value": "",
       "type": "string"
     }
@@ -2044,6 +2099,483 @@
             }
           ],
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "V2 Recovery (private mail tokens)",
+      "item": [
+        {
+          "name": "Email availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/config",
+            "description": "Public status; no secrets or tokens."
+          }
+        },
+        {
+          "name": "Request password reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/forgot-password",
+            "description": "Generic response, not delivery evidence. Use disposable account; smtp-file or SMTP required for mail.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Request verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/verification",
+            "description": "Generic response; read token only from private email.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Verify email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/verify-email",
+            "description": "Set token locally from VERIFY email; single-use. Never export populated token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{recoveryToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reset password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/reset-password",
+            "description": "Use RESET token and disposable account. Changes password, invalidates prior sessions; sign in afterward.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{recoveryToken}}\",\n  \"password\": \"{{newPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "V2 Mentor (optional provider)",
+      "item": [
+        {
+          "name": "Mentor status/history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/mentor",
+            "description": "Without configured server key available=false."
+          }
+        },
+        {
+          "name": "Ask mentor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/mentor",
+            "description": "Actual provider request if enabled; may consume provider quota. Missing key returns 503.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Which missing skill should I practise next, and what is a small project for it?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Clear history",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/mentor/history",
+            "description": "Deletes own history; quota remains."
+          }
+        }
+      ]
+    },
+    {
+      "name": "V2 Assessments and Planner",
+      "item": [
+        {
+          "name": "Assessment overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/assessments",
+            "description": "Requires student session; execution evidence pending."
+          }
+        },
+        {
+          "name": "Start assessment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/assessments/{{skillId}}/start",
+            "description": "Captures random IDs. Example answers use option 0, not claimed correct."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.response.code===200) {",
+                  "  const s=pm.response.json();",
+                  "  pm.collectionVariables.set(\"quizSessionId\",s.id);",
+                  "  pm.collectionVariables.set(\"quizAnswers\",JSON.stringify(s.questions.map(q=>({questionId:q.id,optionIndex:0}))));",
+                  "  pm.test(\"No answer keys at start\",()=>s.questions.forEach(q=>{pm.expect(q).not.to.have.property(\"correctOptionIndex\");pm.expect(q).not.to.have.property(\"explanation\");}));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit captured answers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/assessments/sessions/{{quizSessionId}}/submit",
+            "description": "Review quizAnswers first; single use, expires in 60 minutes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"answers\":{{quizAnswers}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Weekly planner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/planner?week={{weekStart}}",
+            "description": "Requires student session; execution evidence pending."
+          }
+        },
+        {
+          "name": "Create goal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/planner/goals",
+            "description": "Creates owned goal.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Practise Java\",\n  \"weekStart\": \"{{weekStart}}\",\n  \"targetMinutes\": 180\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) { const data=pm.response.json(); if(data.id !== undefined) pm.collectionVariables.set(\"goalId\",data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update goal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/planner/goals/{{goalId}}",
+            "description": "Requires student session; execution evidence pending.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Practise Java and Git\",\n  \"weekStart\": \"{{weekStart}}\",\n  \"targetMinutes\": 240\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete created goal",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/planner/goals/{{goalId}}",
+            "description": "Inspect captured ID first."
+          }
+        },
+        {
+          "name": "Create task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/planner/tasks",
+            "description": "Due date must be in normalized week.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Build a Java exercise\",\n  \"skillId\": null,\n  \"roadmapStepId\": null,\n  \"dueDate\": \"{{dueDate}}\",\n  \"estimatedMinutes\": 45,\n  \"status\": \"NOT_STARTED\",\n  \"weekStart\": \"{{weekStart}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) { const data=pm.response.json(); if(data.id !== undefined) pm.collectionVariables.set(\"taskId\",data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/planner/tasks/{{taskId}}",
+            "description": "Requires student session; execution evidence pending.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Build a Java exercise\",\n  \"skillId\": null,\n  \"roadmapStepId\": null,\n  \"dueDate\": \"{{dueDate}}\",\n  \"estimatedMinutes\": 45,\n  \"status\": \"COMPLETED\",\n  \"weekStart\": \"{{weekStart}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete created task",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/planner/tasks/{{taskId}}",
+            "description": "Inspect captured ID first."
+          }
+        }
+      ]
+    },
+    {
+      "name": "V2 Resume, Comparison, Recommendations and Progress",
+      "item": [
+        {
+          "name": "Resume bundle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/resume",
+            "description": "Requires student session; execution evidence pending."
+          }
+        },
+        {
+          "name": "Save resume fields",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/resume",
+            "description": "Replaces editable fields; does not change source profile/skills/projects.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"headline\": \"Computer Science Student\",\n  \"summary\": \"Building a Java learning portfolio.\",\n  \"phone\": \"\",\n  \"location\": \"Mumbai\",\n  \"website\": \"\",\n  \"education\": \"\",\n  \"experience\": \"\",\n  \"achievements\": \"\",\n  \"includeSkills\": true,\n  \"includeProjects\": true,\n  \"includeEducation\": true,\n  \"includeExperience\": true,\n  \"includeAchievements\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Download PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/resume/pdf",
+            "description": "Binary attachment; use Send and Download."
+          }
+        },
+        {
+          "name": "Compare careers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/careers/compare?left={{compareLeft}}&right={{compareRight}}",
+            "description": "Set both IDs from catalog; active career unchanged."
+          }
+        },
+        {
+          "name": "Eligible recommendations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/recommendations",
+            "description": "Captures first eligible slug."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.response.code===200){const r=pm.response.json();pm.collectionVariables.set(\"recommendationId\",r.length?r[0].id:\"\");}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save recommendation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/recommendations/{{recommendationId}}/save",
+            "description": "Requires student session; execution evidence pending."
+          }
+        },
+        {
+          "name": "Unsave recommendation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/recommendations/{{recommendationId}}/save",
+            "description": "Requires student session; execution evidence pending."
+          }
+        },
+        {
+          "name": "Add portfolio project",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/recommendations/{{recommendationId}}/portfolio",
+            "description": "Repeat returns same project; deleted prior project gives 409. This changes portfolio."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) { const data=pm.response.json(); if(data.id !== undefined) pm.collectionVariables.set(\"projectId\",data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Progress history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/progress",
+            "description": "Read-only latest 500 events, per-career trend and local streak."
+          }
         }
       ]
     }

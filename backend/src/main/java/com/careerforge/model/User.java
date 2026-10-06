@@ -18,4 +18,8 @@ public class User {
     @JoinColumn(name="career_id",insertable=false,updatable=false)
     public Career career;
     @Column(nullable=false) public String role="STUDENT";
+    @Column(nullable=false) public String timezone="Asia/Kolkata";
+    @Column(nullable=false) public boolean emailVerified=false;
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(nullable=false) public long sessionVersion=0;
 }

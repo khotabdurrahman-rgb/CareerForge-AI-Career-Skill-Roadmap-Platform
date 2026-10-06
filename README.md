@@ -1,6 +1,6 @@
 # CareerForge
 
-A college mini-project for student career planning: maintain a profile, record skills, compare them with a career goal, follow a learning roadmap, and track portfolio projects. Administrators maintain careers and learning resources. Recommendations use a rule-based skill comparison; no AI API key is required.
+A college mini-project for student career planning: maintain a profile, record skills, compare them with a career goal, follow a learning roadmap, and track portfolio projects. V2 adds assessments, weekly planning, progress history, saved recommendations, resume/PDF export, account recovery/email verification, and an optional AI mentor. Administrators maintain careers and learning resources. Core skill-gap readiness is rule-based and works without AI or SMTP credentials.
 
 ## Run locally
 
@@ -40,7 +40,7 @@ mvn -f backend/pom.xml spring-boot:run
 
 ## MySQL profile
 
-Import `database/schema.sql`, optionally import `database/sample-data.sql`, then run:
+Create the `careerforge` database only, grant the application account migration permissions, then run:
 
 ```powershell
 $env:DB_URL = 'jdbc:mysql://localhost:3306/careerforge'
@@ -49,7 +49,13 @@ $env:DB_PASSWORD = 'your-local-password'
 .\scripts\start.ps1 -Profile mysql
 ```
 
-See [database setup](database/README.md) for permissions and import instructions. Do not import the MySQL scripts into H2.
+See [database setup](database/README.md) for grants, backup, and upgrade instructions. Flyway runs V1 then V2 on a fresh database. A compatible existing V1 schema is baselined at version 1 and receives V2 without resetting records. `database/schema.sql` remains a historical V1 bootstrap; do not manually create V2 tables before running V2.
+
+## Optional AI and email
+
+[.env.example](.env.example) lists configuration; it is a reference, not automatically loaded. Set variables in the starting PowerShell session. `OPENAI_API_KEY` enables the optional mentor; `OPENAI_MODEL` defaults to `gpt-4.1-mini`. The backend calls the [OpenAI Responses API](https://developers.openai.com/api/reference/python/resources/responses/methods/create) through Java `HttpClient` with `store:false`. Local mentor history still persists in the application database. Never place keys in browser code or commit them.
+
+Real mail uses `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTH`, `SMTP_STARTTLS`, `MAIL_FROM`, and `APP_BASE_URL`. Local testing uses the `smtp-file` profile and private `backend/data/mail` files from the backend working directory. Raw recovery/verification tokens must not appear in normal UI/API responses. Optional services expose unavailable status without blocking core startup. See [configuration and security](docs/security-configuration.md).
 
 ## Project map
 
@@ -70,6 +76,9 @@ The backend is rooted at `backend/pom.xml`. The earlier `STEP-1-ARCHITECTURE.md`
 - [College project report](docs/project-report.md)
 - [Collaboration and design review](docs/agent-review.md)
 - [Manual verification checklist](docs/verification.md)
+- [V2 changelog](docs/changelog.md)
+- [Configuration and security](docs/security-configuration.md)
+- [Public website deployment](docs/public-deployment.md)
 - [Screenshot evidence](docs/screenshots/README.md)
 - [MySQL schema](database/schema.sql) and [sample data](database/sample-data.sql)
 
@@ -77,20 +86,20 @@ Authentication uses a server session cookie and BCrypt password hashes. Postman 
 
 ## Verification status
 
-**2026-10-06:** backend compilation succeeded; **21 Spring integration tests passed** (zero failures, errors, or skips). Live checks in `qa/check-api.cjs` passed **17 assertions on each profile**: H2 at `http://localhost:8090` and the MySQL profile backed by XAMPP MariaDB 10.4 at `http://localhost:8091`. Browser checks in `qa/check-browser.cjs` passed **31 assertions** across desktop/mobile workflows with no captured page errors or HTTP 5xx responses. Oracle MySQL was not installed or tested. See [verification](docs/verification.md) for coverage, optional QA commands, and evidence limits.
+**2026-10-06:** 41 Java tests pass. Both persistent H2 and the MySQL profile (MariaDB 10.4) pass 17 existing and 141 V2 live API checks. Chromium passes 185 V2 checks plus 31 original regression checks, with desktop/390px/320px screenshots. Existing V1 data was retained through additive migrations, and both profiles pass Hibernate validation. PDF checks cover selectable Unicode text, section visibility, wrapping, and pagination. See [verification](docs/verification.md) for scope. Real OpenAI and external SMTP require credentials and were not called; provider behavior is tested through a local HTTP fixture and private file-mail tests. Oracle MySQL and the Postman collection were not separately executed.
 
 ## Screenshots
 
-[Student dashboard, desktop](docs/screenshots/dashboard-desktop.png):
+[Student dashboard, desktop](docs/screenshots/v2-dashboard-1440.png):
 
-![CareerForge student dashboard on desktop](docs/screenshots/dashboard-desktop.png)
+![CareerForge V2 student dashboard on desktop](docs/screenshots/v2-dashboard-1440.png)
 
 <details>
 <summary>Mobile dashboard and administrator view</summary>
 
-[Student dashboard, mobile](docs/screenshots/dashboard-mobile.png):
+[Student dashboard, mobile](docs/screenshots/v2-dashboard-390.png):
 
-![CareerForge student dashboard on mobile](docs/screenshots/dashboard-mobile.png)
+![CareerForge V2 student dashboard on mobile](docs/screenshots/v2-dashboard-390.png)
 
 [Administrator view, desktop](docs/screenshots/admin-desktop.png):
 

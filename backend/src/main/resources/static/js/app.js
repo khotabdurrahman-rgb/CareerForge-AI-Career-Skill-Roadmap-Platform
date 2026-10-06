@@ -8,7 +8,10 @@
     dashboard: ['Dashboard', 'grid-1x2'], skills: ['My skills', 'stack'],
     careers: ['Career paths', 'compass'], gap: ['Skill gap', 'pie-chart'],
     roadmap: ['Learning roadmap', 'signpost-split'], projects: ['Projects', 'folder2-open'],
-    resources: ['Resources', 'book'], profile: ['My profile', 'person'], admin: ['Administration', 'shield-check']
+    resources: ['Resources', 'book'], assessments: ['Assessments', 'clipboard-check'], planner: ['Weekly planner', 'calendar3'],
+    resume: ['Resume builder', 'file-earmark-person'], compare: ['Compare careers', 'layout-split'],
+    recommendations: ['Project ideas', 'lightbulb'], history: ['Progress history', 'clock-history'], mentor: ['Career mentor', 'chat-dots'],
+    profile: ['My profile', 'person'], admin: ['Administration', 'shield-check']
   };
   const statuses = { NOT_STARTED: 'Not started', IN_PROGRESS: 'In progress', COMPLETED: 'Completed' };
   const levels = ['Beginner', 'Intermediate', 'Advanced'];
@@ -30,18 +33,19 @@
   const badge = (label, tone = '') => `<span class="tag ${tone}">${esc(label)}</span>`;
   const statusBadge = value => badge(statuses[value] || value || 'Not started', value === 'COMPLETED' ? 'green' : value === 'IN_PROGRESS' ? 'blue' : '');
   const linkButton = (route, label, glyph = 'arrow-right') => `<a class="btn btn-outline-secondary" href="#${route}">${esc(label)} ${icon(glyph)}</a>`;
-  const actionButton = (action, label, glyph = 'plus-lg', id = '', style = 'primary') => `<button class="btn btn-${style}" data-action="${action}"${id !== '' ? ` data-id="${esc(id)}"` : ''}>${icon(glyph)} ${esc(label)}</button>`;
-  const iconButton = (action, label, glyph, id, danger = false) => `<button class="icon-btn${danger ? ' danger' : ''}" data-action="${action}" data-id="${esc(id)}" aria-label="${esc(label)}" title="${esc(label)}">${icon(glyph)}</button>`;
+  const actionButton = (action, label, glyph = 'plus-lg', id = '', style = 'primary') => `<button type="button" class="btn btn-${style}" data-action="${action}"${id !== '' ? ` data-id="${esc(id)}"` : ''}>${icon(glyph)} ${esc(label)}</button>`;
+  const iconButton = (action, label, glyph, id, danger = false) => `<button type="button" class="icon-btn${danger ? ' danger' : ''}" data-action="${action}" data-id="${esc(id)}" aria-label="${esc(label)}" title="${esc(label)}">${icon(glyph)}</button>`;
   const empty = (title, description, action = '', glyph = 'inbox') => `<div class="empty">${icon(glyph)}<h2>${esc(title)}</h2><p>${esc(description)}</p>${action}</div>`;
   const ring = value => `<div class="ring" style="--progress:${value}" role="img" aria-label="Career readiness ${value}%"><div class="ring-inner">${value}%<small>career ready</small></div></div>`;
   const progress = (value, label = 'Progress') => `<div class="progress" role="progressbar" aria-label="${esc(label)}" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:${value}%"></div></div>`;
   const field = (label, name, value = '', type = 'text', required = false, max = 255) => `<div class="form-group"><label class="form-label" for="field-${name}">${esc(label)}</label><input class="form-control" id="field-${name}" name="${name}" type="${type}" value="${esc(value)}" maxlength="${max}" ${required ? 'required' : ''} ${type === 'password' ? 'minlength="8"' : ''}></div>`;
-  const textarea = (label, name, value = '', required = false) => `<div class="form-group"><label class="form-label" for="field-${name}">${esc(label)}</label><textarea class="form-control" id="field-${name}" name="${name}" rows="3" maxlength="2000" ${required ? 'required' : ''}>${esc(value)}</textarea></div>`;
+  const textarea = (label, name, value = '', required = false, max = 2000) => `<div class="form-group"><label class="form-label" for="field-${name}">${esc(label)}</label><textarea class="form-control" id="field-${name}" name="${name}" rows="3" maxlength="${max}" ${required ? 'required' : ''}>${esc(value)}</textarea></div>`;
   const selectField = (label, name, options, selected = '', required = true) => `<div class="form-group"><label class="form-label" for="field-${name}">${esc(label)}</label><select class="form-select" id="field-${name}" name="${name}" ${required ? 'required' : ''}>${options.map(option => `<option value="${esc(option.value)}" ${eq(option.value, selected) ? 'selected' : ''}>${esc(option.label)}</option>`).join('')}</select></div>`;
   const options = values => values.map(value => ({ value, label: value }));
   const skillOptions = () => [{ value: '', label: 'Choose a skill' }, ...state.catalog.map(skill => ({ value: skill.id, label: skill.name }))];
   const careerOptions = () => [{ value: '', label: 'Choose a career path' }, ...state.careers.map(career => ({ value: career.id, label: career.name }))];
   const errorBox = () => '<div class="error-box" role="alert" tabindex="-1" data-form-error></div>';
+  const v2 = window.CareerForgeV2({ $, state, api: (...args) => api(...args), esc, icon, eq, list, badge, statuses, field, textarea, selectField, options, skillOptions, careerOptions, errorBox, head, footer, empty, progress, actionButton, iconButton, openModal: (...args) => openModal(...args), toast, submitForm: (...args) => submitForm(...args), render: () => renderView(), refresh: () => refresh(), endSession: () => endSession() });
 
   class ApiError extends Error { constructor(message, status) { super(message); this.status = status; } }
   async function api(path, method = 'GET', body) {
@@ -85,6 +89,7 @@
 
   function endSession(expired = false) {
     sessionRevision++;
+    v2.clear();
     state.user = null; state.data = null; state.catalog = []; state.careers = []; state.users = [];
     state.busy = false; refreshTask = null;
     if (modal.open) modal.close();
@@ -95,6 +100,7 @@
 
   function renderAuth(message = '') {
     closeNav();
+    if (v2.isRecovery()) { v2.activate('recovery'); v2.renderRecovery(); return; }
     const register = location.hash === '#register';
     document.title = `${register ? 'Create account' : 'Sign in'} | CareerForge`;
     app.innerHTML = `<main id="main" class="auth-page"><div class="auth-wrap">
@@ -105,17 +111,20 @@
       ${register ? field('Full name', 'name', '', 'text', true, 100) : ''}
       <div class="form-group"><label class="form-label" for="email">Email address</label><input class="form-control" type="email" id="email" name="email" placeholder="you@college.edu" autocomplete="username" maxlength="255" required></div>
       <div class="form-group"><label class="form-label" for="password">Password</label><div class="password-wrap"><input class="form-control" type="password" id="password" name="password" placeholder="${register ? 'At least 8 characters' : 'Enter your password'}" autocomplete="${register ? 'new-password' : 'current-password'}" ${register ? 'minlength="8" maxlength="72"' : ''} required><button type="button" class="icon-btn" data-action="password" aria-label="Show password" title="Show password">${icon('eye')}</button></div></div>
-      <button class="btn btn-primary submit" type="submit">${register ? 'Create account' : 'Sign in'} ${icon('arrow-right')}</button></form>
-      <div class="demo-separator">Try a demo account</div><div class="demo-buttons">${actionButton('demo-student', 'Student demo', 'mortarboard', '', 'outline-secondary')}${actionButton('demo-admin', 'Admin demo', 'shield-check', '', 'outline-secondary')}</div>
+      <button class="btn btn-primary submit" type="submit">${register ? 'Create account' : 'Sign in'} ${icon('arrow-right')}</button></form><div class="recovery-links"><a href="#forgot-password">Forgot password?</a><a href="#verification">Verify email</a></div>
+      <div class="demo-separator" data-demo-controls hidden>Try a demo account</div><div class="demo-buttons" data-demo-controls hidden>${actionButton('demo-student', 'Student demo', 'mortarboard', '', 'outline-secondary')}${actionButton('demo-admin', 'Admin demo', 'shield-check', '', 'outline-secondary')}</div>
       </section><p class="auth-footer">CareerForge &middot; Your career, a work in progress.</p></div></main>`;
     if (message) { const box = $('[data-form-error]'); box.textContent = message; }
     if (register) $('#field-name').autocomplete = 'name';
+    api('/api/auth/config').then(config => {
+      document.querySelectorAll('[data-demo-controls]').forEach(element => { element.hidden = !config.demoEnabled; });
+    }).catch(() => {});
   }
 
   function shell() {
     app.innerHTML = `<button class="sidebar-backdrop" aria-label="Close navigation" data-action="close-nav" tabindex="-1"></button>
       <aside class="sidebar" aria-label="Main navigation"><a class="brand" href="#dashboard"><img src="assets/brand.png" alt="">CareerForge</a>
-      <div class="nav-label">Your workspace</div><nav class="side-nav">${Object.entries(routes).filter(([key]) => key !== 'admin' || isAdmin()).map(([key, [label, glyph]]) => `<a href="#${key}" data-route="${key}">${icon(glyph)}<span>${label}</span></a>`).join('')}</nav>
+      <nav class="side-nav">${[['Workspace', ['dashboard', 'skills', 'assessments', 'planner', 'roadmap']], ['Explore', ['careers', 'compare', 'gap', 'resources', 'mentor']], ['Portfolio', ['projects', 'recommendations', 'resume', 'history']], ['Account', ['profile', 'admin']]].map(([group, keys]) => `<div class="nav-label">${group}</div>${keys.filter(key => key !== 'admin' || isAdmin()).map(key => { const [label, glyph] = routes[key]; return `<a href="#${key}" data-route="${key}">${icon(glyph)}<span>${label}</span></a>`; }).join('')}`).join('')}</nav>
       <div class="sidebar-foot"><div class="workspace-label">${icon('mortarboard')}<div>Student workspace<br><small>Build your next chapter</small></div></div><button class="logout" data-action="logout">${icon('box-arrow-left')} Sign out</button></div></aside>
       <div class="shell"><header class="topbar"><div class="d-flex align-items-center gap-3"><button class="icon-btn mobile-menu" data-action="open-nav" aria-controls="sidebar-nav" aria-expanded="false" aria-label="Open navigation">${icon('list')}</button><div class="breadcrumb"><span>Workspace</span>${icon('chevron-right')}<strong id="breadcrumb-page">Dashboard</strong></div></div><div class="top-actions"><span class="refresh-label" id="refresh-label">All changes saved</span><button class="icon-btn" data-action="refresh" title="Refresh workspace" aria-label="Refresh workspace">${icon('arrow-clockwise')}</button><a class="user-button" href="#profile" aria-label="Open your profile"><span class="avatar">${esc(initial(state.user.name))}</span><span class="user-label"><strong>${esc(state.user.name)}</strong><small>${isAdmin() ? 'Administrator' : 'Student account'}</small></span></a></div></header>
       <main id="main" class="content" tabindex="-1"></main></div>`;
@@ -149,6 +158,7 @@
     ];
     return `<div class="date-label">${icon('calendar3')} ${esc(new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))}</div>${head(`Hello, ${state.user.name.split(' ')[0] || 'there'}.`, "Here's where you stand on your career journey.", actionButton('add-skill', 'Add a skill'))}
       <div class="metrics">${metrics.map(([label, number, glyph, note]) => `<section class="panel metric"><div class="metric-top"><span>${label}</span><span class="metric-icon">${icon(glyph)}</span></div><div class="metric-number">${number}</div><small>${esc(note)}</small></section>`).join('')}</div>
+      <nav class="dashboard-v2" aria-label="Next steps"><a href="#planner">${icon('calendar3')} Plan your week ${icon('arrow-right')}</a><a href="#assessments">${icon('clipboard-check')} Assess your skills ${icon('arrow-right')}</a><a href="#history">${icon('clock-history')} Review your progress ${icon('arrow-right')}</a></nav>
       <div class="dashboard-grid"><section class="panel"><div class="goal-band"><div class="goal-symbol">${icon('compass')}</div><div><span class="eyebrow">Your career goal</span><h2>${esc(d.career?.name || 'Choose your direction')}</h2><p>${d.career ? `${d.career.skills?.length || 0} core skills to build your foundation` : 'Explore a path that feels right for you'}</p></div><a class="btn btn-outline-secondary" href="#careers" aria-label="Change career goal">${icon('pencil')} Change</a></div><div class="readiness-area">${ring(readiness())}<div><h3>${readiness() >= 100 ? 'Your foundation is ready.' : 'Every skill moves you forward.'}</h3><p>${d.gap.missing.length ? `${d.gap.missing.length} more skills to cover your career requirements.` : 'Put your skills into practice with a portfolio project.'}</p><div class="tags">${badge(`${d.gap.completed.length} acquired`, 'green')}${badge(`${d.gap.missing.length} to learn`, 'blue')}</div></div></div><div class="section-note">${icon('info-circle')} Readiness compares your skills with your selected career requirements.</div></section>
       <section class="panel"><div class="panel-head"><h2>Up next</h2><a href="#roadmap">View roadmap ${icon('arrow-right')}</a></div>${next.length ? roadmapRows(next) : empty('You are all caught up', 'Explore resources or start a new project.', linkButton('projects', 'View projects'), 'check2-circle')}<div class="panel-body pt-3"><div class="d-flex justify-content-between mb-2"><small class="text-secondary">Roadmap progress</small><small>${roadmapPercent}%</small></div>${progress(roadmapPercent, 'Roadmap progress')}</div></section>
       <section class="panel"><div class="panel-head"><h2>Your skill toolkit</h2><a href="#skills">View all ${icon('arrow-right')}</a></div>${d.skills.length ? d.skills.slice(0, 5).map(item => `<div class="list-row"><div class="row-main"><span class="metric-icon">${icon('code-slash')}</span><div><strong>${esc(item.skill.name)}</strong><small>Part of your skill toolkit</small></div></div>${badge(item.level, item.level === 'Advanced' ? 'green' : '')}</div>`).join('') : empty('Your toolkit starts here', 'Add the skills you already know.', actionButton('add-skill', 'Add your first skill'), 'stack')}</section>
@@ -231,18 +241,21 @@
     return items.length ? `<div class="table-responsive"><table class="table"><thead><tr><th>Resource</th><th>Skill</th><th>Type</th><th>Actions</th></tr></thead><tbody>${items.map(resource => `<tr><td><strong>${esc(resource.title)}</strong>${safeUrl(resource.url) ? `<br><a href="${esc(safeUrl(resource.url))}" target="_blank" rel="noopener noreferrer"><small>${esc(new URL(safeUrl(resource.url)).hostname)} ${icon('box-arrow-up-right')}</small></a>` : ''}</td><td>${esc(resource.skill?.name)}</td><td>${badge(resource.type, 'blue')}</td><td><div class="row-actions justify-content-end">${iconButton('edit-resource', `Edit ${resource.title}`, 'pencil', resource.id)}${iconButton('delete-resource', `Delete ${resource.title}`, 'trash3', resource.id, true)}</div></td></tr>`).join('')}</tbody></table></div>` : empty('No resources found', 'Add a resource or try another search.', actionButton('add-resource', 'Add resource'), 'book');
   }
 
-  const views = { dashboard: dashboardView, skills: skillsView, careers: careersView, gap: gapView, roadmap: roadmapView, projects: projectsView, resources: resourcesView, profile: profileView, admin: adminView };
+  const views = { dashboard: dashboardView, skills: skillsView, careers: careersView, gap: gapView, roadmap: roadmapView, projects: projectsView, resources: resourcesView, profile: profileView, admin: adminView, ...v2.views };
   function renderView(focus = false) {
     if (!state.user) return;
+    if (v2.isRecovery()) { v2.activate('recovery'); v2.renderRecovery(); return; }
     if (!$('#main.content')) shell();
-    const requested = location.hash.slice(1);
+    const requested = location.hash.slice(1).split('?')[0];
     const route = routes[requested] && (requested !== 'admin' || isAdmin()) ? requested : 'dashboard';
     if (state.route !== route) { state.query = ''; state.filter = ''; state.route = route; }
+    v2.activate(route);
     document.title = `${routes[route][0]} | CareerForge`;
     $('#breadcrumb-page').textContent = routes[route][0];
     document.querySelectorAll('[data-route]').forEach(item => { const active = item.dataset.route === route; item.classList.toggle('active', active); if (active) item.setAttribute('aria-current', 'page'); else item.removeAttribute('aria-current'); });
-    $('#main').innerHTML = state.data ? views[route]() : `<div class="loading-area" aria-busy="true"><span class="spinner-border text-success" role="status"><span class="visually-hidden">Loading</span></span>Loading your workspace...</div>`;
-    if (route === 'profile' && state.data) $('#field-email').disabled = true;
+    $('#main').innerHTML = state.data || v2.views[route] ? views[route]() : state.workspaceError ? empty('Your workspace could not load', state.workspaceError, actionButton('retry', 'Try again', 'arrow-clockwise'), 'cloud-slash') : `<div class="loading-area" aria-busy="true"><span class="spinner-border text-success" role="status"><span class="visually-hidden">Loading</span></span>Loading your workspace...</div>`;
+    if (route === 'profile' && state.data) { $('#field-email').disabled = true; v2.profile(); }
+    v2.afterRender();
     closeNav();
     if (focus) $('#main').focus({ preventScroll: true });
   }
@@ -269,6 +282,7 @@
       const [data, catalog, careers, users] = results.map(result => result.value);
       if (!data?.user) throw new ApiError('The dashboard response is missing your profile. Please retry.', 0);
       state.user = data.user;
+      state.workspaceError = '';
       state.data = { ...data, skills: list(data.skills), roadmap: list(data.roadmap).sort((a, b) => a.position - b.position), projects: list(data.projects), resources: list(data.resources), gap: { ...data.gap, completed: list(data.gap?.completed), missing: list(data.gap?.missing) } };
       state.catalog = list(catalog); state.careers = list(careers); state.users = list(users);
       if (render) { shell(); renderView(); }
@@ -278,10 +292,13 @@
     try { return await task; } finally { if (refreshTask === task) refreshTask = null; }
   }
   async function loadWorkspace() {
+    state.workspaceError = '';
     shell(); renderView();
     try { await refresh(); }
     catch (error) {
       if (!state.user) return;
+      state.workspaceError = error.message;
+      if (v2.views[state.route] || v2.isRecovery()) return;
       $('#main').innerHTML = empty('Your workspace could not load', error.message, actionButton('retry', 'Try again', 'arrow-clockwise'), 'cloud-slash');
     }
   }
@@ -349,7 +366,7 @@
   }
   function profilePayload(careerId = state.user.careerId) {
     const { name, course, college, currentYear } = state.user;
-    return { name, course: course || '', college: college || '', currentYear: currentYear || '', careerId: Number(careerId) };
+    return { name, course: course || '', college: college || '', currentYear: currentYear || '', careerId: Number(careerId), ...(state.user.timezone ? { timezone: state.user.timezone } : {}) };
   }
   function skillDialog(id) {
     const item = id ? state.data.skills.find(skill => eq(skill.id, id)) : null;
@@ -476,6 +493,7 @@
       finally { state.busy = false; button.disabled = false; }
     }
     if (action === 'refresh' || action === 'retry') {
+      if (v2.views[state.route]) { v2.reload(state.route); return; }
       state.busy = true; button.disabled = true;
       try { if (action === 'retry' && !state.data) await loadWorkspace(); else { await refresh(); toast('Workspace refreshed.'); } }
       catch (error) { if (state.user) toast(error.message, true); }
@@ -503,7 +521,7 @@
       sessionRevision++; await loadWorkspace();
     } catch (error) {
       state.user = null;
-      if (location.hash !== '#register') location.hash = 'login';
+      if (location.hash !== '#register' && !v2.isRecovery()) location.hash = 'login';
       renderAuth(error.status === 401 ? '' : error.message);
     }
   }

@@ -20,12 +20,14 @@ public class CareerService {
     private final RoadmapStepRepository roadmap;
     private final ProjectRepository projects;
     private final ResourceRepository resources;
+    private final com.careerforge.v2.extras.ProgressService progress;
 
     public CareerService(UserRepository users,SkillRepository skills,CareerRepository careers,
                          UserSkillRepository userSkills,RoadmapStepRepository roadmap,
-                         ProjectRepository projects,ResourceRepository resources) {
+                         ProjectRepository projects,ResourceRepository resources,com.careerforge.v2.extras.ProgressService progress) {
         this.users=users; this.skills=skills; this.careers=careers; this.userSkills=userSkills;
         this.roadmap=roadmap; this.projects=projects; this.resources=resources;
+        this.progress=progress;
     }
     public UserRepository users() { return users; }
     public SkillRepository skills() { return skills; }
@@ -52,6 +54,7 @@ public class CareerService {
         return Map.of("completed",completed,"missing",missing,"readiness",readiness);
     }
     public List<RoadmapStep> generateRoadmap(User user) {
+        users.findLockedById(user.id).orElseThrow(()->missing("User not found"));
         Career career=career(user.careerId);
         List<RoadmapStep> existing=roadmap.findByUserIdAndCareerIdOrderByPositionAsc(user.id,career.id);
         Set<Long> learned=new HashSet<>();
@@ -93,26 +96,44 @@ public class CareerService {
     }
     public User profile(User user,Profile input) {
         career(input.careerId());
+        boolean changed=!Objects.equals(user.name,input.name().trim()) || !Objects.equals(user.course,input.course())
+                || !Objects.equals(user.college,input.college()) || !Objects.equals(user.currentYear,input.currentYear())
+                || !Objects.equals(user.careerId,input.careerId())
+                || (input.timezone()!=null && !input.timezone().isBlank() && !Objects.equals(user.timezone,input.timezone()));
+        if(input.timezone()!=null && !input.timezone().isBlank()) {
+            try { java.time.ZoneId.of(input.timezone()); }
+            catch(java.time.DateTimeException error) { throw bad("Choose a valid timezone."); }
+            user.timezone=input.timezone();
+        }
         user.name=input.name().trim(); user.course=input.course(); user.college=input.college();
         user.currentYear=input.currentYear(); user.careerId=input.careerId();
-        users.save(user); generateRoadmap(user); return user;
+        users.save(user); generateRoadmap(user);
+        if(changed) record(user,"PROFILE_UPDATED","Profile and career plan updated");
+        return user;
     }
     public UserSkill addSkill(User user,SkillInput input) {
         if(!Set.of("Beginner","Intermediate","Advanced").contains(input.level())) throw bad("Choose a valid skill level");
         Skill skill=skill(input.skillId());
         UserSkill item=userSkills.findByUserIdAndSkillId(user.id,skill.id).orElseGet(UserSkill::new);
+        boolean changed=item.id==null || !Objects.equals(item.level,input.level());
         item.user=user; item.skill=skill; item.level=input.level();
-        userSkills.save(item); generateRoadmap(user); return item;
+        userSkills.save(item); generateRoadmap(user);
+        if(changed) record(user,"SKILL_UPDATED","Declared skill: "+skill.name+" ("+input.level()+")");
+        return item;
     }
     public void removeSkill(User user,Long id) {
         UserSkill item=userSkills.findById(id).orElseThrow(()->missing("Skill not found"));
-        owns(item.user.id,user); userSkills.delete(item); userSkills.flush(); generateRoadmap(user);
+        owns(item.user.id,user);
+        String name=item.skill.name;
+        userSkills.delete(item); userSkills.flush(); generateRoadmap(user);
+        record(user,"SKILL_REMOVED","Removed declared skill: "+name);
     }
     public RoadmapStep updateStep(User user,Long id,Status input) {
         if(!Set.of("NOT_STARTED","IN_PROGRESS","COMPLETED").contains(input.status())) throw bad("Invalid roadmap status");
         RoadmapStep item=roadmap.findById(id).orElseThrow(()->missing("Roadmap step not found"));
         owns(item.user.id,user);
         if(!item.careerId.equals(user.careerId)) throw bad("Select this step's career before updating it");
+        boolean changed=!Objects.equals(item.status,input.status());
         item.status=input.status();
         if(item.skill!=null) {
             Optional<UserSkill> learned=userSkills.findByUserIdAndSkillId(user.id,item.skill.id);
@@ -122,20 +143,28 @@ public class CareerService {
                 userSkills.delete(learned.get()); userSkills.flush();
             }
         }
-        return roadmap.save(item);
+        roadmap.save(item);
+        if(changed) record(user,"ROADMAP_UPDATED",item.title+": "+input.status().toLowerCase(Locale.ROOT).replace('_',' '));
+        return item;
     }
     public Project saveProject(User user,Long id,ProjectInput input) {
         if(!Set.of("IN_PROGRESS","COMPLETED").contains(input.status())) throw bad("Invalid project status");
         validateUrl(input.githubUrl(),true);
         Project item=id==null ? new Project() : projects.findById(id).orElseThrow(()->missing("Project not found"));
         if(item.user!=null) owns(item.user.id,user);
+        boolean changed=item.id==null || !Objects.equals(item.name,input.name().trim()) || !Objects.equals(item.description,input.description())
+                || !Objects.equals(item.technology,input.technology()) || !Objects.equals(item.githubUrl,input.githubUrl())
+                || !Objects.equals(item.status,input.status());
         item.user=user; item.name=input.name().trim(); item.description=input.description();
         item.technology=input.technology(); item.githubUrl=input.githubUrl(); item.status=input.status();
-        return projects.save(item);
+        projects.save(item);
+        if(changed) record(user,"PROJECT_UPDATED","Portfolio project: "+item.name);
+        return item;
     }
     public void removeProject(User user,Long id) {
         Project item=projects.findById(id).orElseThrow(()->missing("Project not found"));
         owns(item.user.id,user); projects.delete(item);
+        record(user,"PROJECT_REMOVED","Removed project: "+item.name);
     }
     public Career saveCareer(Long id,CareerInput input) {
         Career item=id==null ? new Career() : career(id);
@@ -163,5 +192,8 @@ public class CareerService {
             URI parsed=URI.create(url);
             if(!Set.of("https","http").contains(parsed.getScheme()) || parsed.getHost()==null) throw bad("Enter a valid http or https URL");
         } catch(IllegalArgumentException|NullPointerException e) { throw bad("Enter a valid http or https URL"); }
+    }
+    private void record(User user,String type,String title) {
+        progress.record(user,type,title.length()>255 ? title.substring(0,255) : title,((Number)gap(user,user.careerId).get("readiness")).doubleValue());
     }
 }

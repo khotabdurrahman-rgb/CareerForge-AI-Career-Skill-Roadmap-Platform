@@ -1,6 +1,22 @@
 # Manual verification checklist
 
-**Results dated 2026-10-06:** **21 Spring integration tests passed**, **17 live API assertions passed on each of two profiles**, and **31 browser assertions passed**. The broader checklist below includes planned checks beyond that evidence. Record date, profile, expected/actual behavior, and evidence for additional checks. Use disposable local data for mutations. Do not expose session cookies in report screenshots.
+## V2 executed evidence - 2026-10-06
+
+- Maven `package` succeeds: **41 tests, zero failures/errors** across seven suites, including the 21 original regression tests and 20 V2/PDF tests. Reports: `backend/target/surefire-reports`.
+- Persistent H2: original populated V1 database backed up privately, baselined at 1, migrated to V2, and restarted with Flyway checksum and Hibernate schema validation. Existing demo records/readiness remain intact.
+- MySQL profile against isolated MariaDB 10.4.32 on port 3307: existing V1 schema upgraded to V2; subsequent startup validates both migration checksums and Hibernate mappings. Oracle MySQL was not installed or separately tested.
+- `qa/check-api.cjs`: **17 PASS** on each profile. `qa/check-v2-api.cjs`: **141 PASS** on each profile. Covers server-only quiz scoring, ownership, separate-request persistence, planner/roadmap links, PDF bytes, comparison, recommendation idempotency, progress reads, unavailable AI/email, and authentication.
+- Local HTTP mentor fixture tests exercise actual Responses request serialization, context, response parsing, provider errors, and timeout. No paid API requests were made. Recovery tests cover hashed expiring/single-use tokens, private file delivery, neutral responses, rate limits, and invalidation of previous sessions.
+- Two PDF layout tests verify selectable Unicode text, visibility controls, long-word wrapping, multi-page content retention, and glyph bounds. Rendered first/last pages in `backend/target/pdf-qa` were visually inspected.
+- Chromium browser: **185 V2 checks PASS**, plus **31 original regression checks PASS**. All 15 workspace routes and four recovery routes were checked at 1440, 390, and 320 pixels. Workflows include quiz feedback, planner goal/task mutations, resume persistence/toggles/download, comparison, saved projects, history, and unavailable mentor. No browser exceptions or captured HTTP 5xx responses. Scrollable tables stay within the page; their deliberately scrollable contents are not mistaken for page overflow.
+
+Real OpenAI and external SMTP delivery remain untested without credentials. File delivery is not SMTP evidence. Postman collection execution, Oracle MySQL, load testing, and penetration testing were not performed.
+
+Additional isolated H2 Flyway probes covered fresh V1/V2 creation, populated V1 baseline/upgrade, default values, and no-op second migration. The private V1 backup is not a public report attachment. Applied SQL must not be edited; schema changes need a new migration version.
+
+## Historical V1 evidence
+
+The earlier results dated 2026-10-06 recorded **21 Spring integration tests**, **17 live API assertions on each profile**, and **31 browser assertions**. They predate V2 and must not be presented as V2 results. Record profile, date, expected/actual behavior, and evidence for all new checks. Keep raw email tokens and session cookies out of screenshots.
 
 Backend compilation succeeded using `.tools/apache-maven-3.9.9` and `C:\Program Files\Java\jdk-17`. `WorkspaceApiIntegrationTest` uses an in-memory H2 database; its Maven Surefire report records **Tests run: 21, Failures: 0, Errors: 0, Skipped: 0**. Evidence: `backend/target/surefire-reports/com.careerforge.qa.WorkspaceApiIntegrationTest.txt`. The suite covers authentication/session rotation, password omission, protected routes, ownership, project CRUD, admin CRUD/authorization, skill upsert/gap calculations, roadmap completion/reversion, career switching, validation, and origin/fetch-metadata checks.
 
@@ -17,8 +33,8 @@ These results do not imply every planned case below was executed. The Postman co
 | SET-01 | Launch with Java 17 and installed/fallback Maven | Startup completes on port 8090 |
 | SET-02 | Launch with no compatible JDK or Maven | Launcher explains the missing prerequisite |
 | DB-01 | Start default profile without MySQL | H2 file-backed demo starts |
-| DB-02 | Import MySQL schema; launch mysql profile | JPA validation accepts tables and application connects |
-| DB-03 | Optional sample seed on fresh MySQL | Catalog references are valid; startup creates demo accounts |
+| DB-02 | Create empty MySQL database only; launch mysql profile | Flyway runs V1/V2, then Hibernate validates |
+| DB-03 | Optional sample seed on empty migrated catalog | No explicit-ID collisions; catalog references valid |
 | AUTH-01 | Login with student demo credentials | Session established; `/api/me` returns student without password hash |
 | AUTH-02 | Use incorrect password | 401 with message |
 | AUTH-03 | Register unique email and valid password | Student created and signed in |
@@ -48,7 +64,32 @@ These results do not imply every planned case below was executed. The Postman co
 | DATA-01 | Restart after changes | Saved profile/skills/projects persist |
 | UI-01 | Check desktop and narrow browser viewport | Navigation and form text remain usable without overlap |
 
-## Evidence log template
+## V2 checks - completion tracked separately
+
+| ID | Action | Expected behavior |
+| --- | --- | --- |
+| V2-DB-01 | Fresh H2 and fresh MySQL startup | Fresh H2 migration probe passed; fresh MySQL startup not separately run |
+| V2-DB-02 | Upgrade a backed-up populated V1 database | Live H2 and MySQL-profile/MariaDB upgrade and validation passed |
+| V2-DB-03 | Restart migrated database | Both live profiles validate previously applied migrations and start successfully |
+| V2-DB-04 | Exercise unique pairs and foreign keys | Duplicate tokens/usage/attempts/bookmarks/resumes rejected |
+| V2-CONFIG | Start with AI/SMTP variables absent | Core workflows usable; service status unavailable |
+| V2-MAIL | Use smtp-file and request reset/verification | Private mail files contain links; responses remain generic and token-free |
+| V2-TOKEN | Expired/wrong-purpose/reused token | Rejected without changing account |
+| V2-RESET | Reset password while signed in on another session | New password works; all prior sessions rejected |
+| V2-VERIFY | Consume valid verification token | emailVerified persists; repeat rejected |
+| V2-MENTOR | Isolated local Responses HTTP test via URL property override | Actual REST body/auth parsing, store:false, context, history, errors, and timeout verified without a real key |
+| V2-QUOTA | Exhaust daily allowance; clear history | 429 at limit; history clear does not restore quota |
+| V2-AI | Explicitly configured real OpenAI call | Provider result recorded separately; pending without credentials |
+| V2-SMTP | Real SMTP delivery | Actual mailbox arrival recorded separately from file mode |
+| V2-QUIZ | Start/submit/expire/repeat and cross-user session | Safe start DTO, server score, 410/409/404; self-report unchanged |
+| V2-PLAN | Goals/tasks, timezone boundaries, overdue and linked completion | Correct local week/totals, ownership, and roadmap side effects |
+| V2-RESUME | Save fields and download Unicode/multipage PDF | Persisted fields; readable valid PDF; owner isolation |
+| V2-COMPARE | Compare two careers | Coverage/estimates accurate; active career unchanged |
+| V2-RECOMMEND | Save/unsave and add portfolio twice | Owned state and idempotent project behavior |
+| V2-PROGRESS | Record activity then GET repeatedly | Readiness snapshots/streak correct; reads create no events |
+| V2-UI | Desktop/mobile V2 views and service-unavailable states | No overlap; controls and validation usable |
+
+## Evidence log
 
 | Check ID | Date / profile | Actual behavior | Evidence location | Result |
 | --- | --- | --- | --- | --- |
@@ -75,6 +116,9 @@ $env:CAREERFORGE_URL = 'http://localhost:8090'
 node qa/check-api.cjs
 $env:CAREERFORGE_URL = 'http://localhost:8091'
 node qa/check-api.cjs
+$env:CAREERFORGE_URL = 'http://localhost:8090'
+node qa/check-v2-api.cjs
+node qa/check-v2-browser.cjs
 ```
 
 The live script expects the demo student's 62.5% baseline and makes temporary mutations before restoring readiness/deleting its project. Use an unchanged demo dataset. These commands describe reproduction; the dated results above record the completed runs.

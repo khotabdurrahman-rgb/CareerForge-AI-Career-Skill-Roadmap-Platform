@@ -1,10 +1,13 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('default', 'mysql')]
+    [ValidateSet('default', 'mysql', 'smtp-file', 'mysql,smtp-file')]
     [string]$Profile = 'default'
 )
 
 $ErrorActionPreference = 'Stop'
+if (-not $PSBoundParameters.ContainsKey('Profile') -and $env:SPRING_PROFILES_ACTIVE) {
+    $Profile = $env:SPRING_PROFILES_ACTIVE
+}
 $workspacePath = Split-Path -Parent $PSScriptRoot
 $backendPath = Join-Path $workspacePath 'backend'
 $pomPath = Join-Path $backendPath 'pom.xml'
@@ -64,7 +67,7 @@ else {
     }
 }
 
-if ($Profile -eq 'mysql') {
+if (($Profile -split ',') -contains 'mysql') {
     foreach ($variableName in @('DB_URL', 'DB_USERNAME', 'DB_PASSWORD')) {
         if (-not [Environment]::GetEnvironmentVariable($variableName)) {
             throw "Set $variableName before launching the MySQL profile."

@@ -2,6 +2,16 @@
 
 Review date: **2026-10-06**. CareerForge was developed through delegated work with explicit file ownership and a shared backend contract.
 
+## V2 collaboration and evidence
+
+Separate agents owned learning APIs, resume/comparison/recommendations/history, frontend, documentation/migrations, and independent QA. The coordinator owned shared backend/configuration, recovery/mentor, integration review, and final fixes. Contracts and ownership boundaries reduced conflicting edits. Frontend/documentation delegates reached their usage limit; the coordinator completed their integration and evidence updates. No GitHub push was requested or performed.
+
+Publication follow-up: the user subsequently requested a public GitHub repository and live website. Docker/public-profile setup was added, and publication was authorized. Hosting still requires an account and durable storage; no paid service is created automatically.
+
+Flyway uses `CLOB` on H2 and `LONGTEXT` on MySQL. Both populated V1 databases upgraded and pass Hibernate validation. Review caught timestamp precision, no-op progress entries, large-text mapping, and launcher profile issues. Final verification includes 41 Java tests and 158 live API checks per profile. Real AI and actual SMTP still require credentials. See [verification](verification.md) for browser evidence and limitations. Agents were assessed by integrated behavior and independent tests, not a subjective winner.
+
+The remainder records the original V1 collaboration/evidence; its counts and screenshots are historical V1 results.
+
 ## Actual collaboration
 
 | Contributor | Responsibility |
@@ -23,7 +33,7 @@ The winning design was assessed qualitatively against four practical criteria:
 
 | Criterion | Design assessment | Evidence and limits |
 | --- | --- | --- |
-| Implementability | A single Maven backend, predefined skills, and deterministic rules keep the mini-project scope manageable. | Backend compiled; 21 Spring integration tests passed. AI and external job feeds remain future work. |
+| Implementability | A single Maven backend, predefined skills, and deterministic rules kept V1 scope manageable. | Historical V1 compilation and 21 integration tests; V2 adds the optional mentor, external job feeds remain future work. |
 | Usability | Profiles, career requirements, gaps, roadmap progress, and projects form one student workflow; administration maintains shared records. | 31 browser assertions passed across desktop/mobile student and administrator workflows. Three screenshots document rendered views. This is workflow evidence, not a user study. |
 | Maintainability | Controllers, services, repositories, DTOs, and entity relationships separate request handling, business rules, validation, and persistence. | SQL/API documentation was aligned with JPA models; shared skills use association tables. Continued maintainability depends on updating these contracts with code changes. |
 | Demo readiness | H2 avoids an external database requirement; demo accounts, a launcher, a setup guide, and an optional database profile support reproduction. | 17 live assertions passed per profile on H2 and MariaDB 10.4; 31 browser assertions passed. Oracle MySQL was not installed or tested. |

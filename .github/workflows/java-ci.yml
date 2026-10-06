@@ -1,0 +1,22 @@
+name: Java and Docker verification
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build container and run Java tests
+        run: docker build -t careerforge:ci .
+      - name: Check public-profile startup
+        run: |
+          docker run -d --name careerforge -p 8090:8090 careerforge:ci
+          trap 'docker logs careerforge; docker stop careerforge' EXIT
+          curl --fail --retry 30 --retry-delay 2 --retry-connrefused http://localhost:8090/api/auth/config > /tmp/config.json
+          node -e 'const c=require("/tmp/config.json"); if(c.demoEnabled !== false) process.exit(1);'

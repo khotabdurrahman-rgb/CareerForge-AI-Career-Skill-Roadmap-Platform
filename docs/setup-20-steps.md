@@ -12,13 +12,13 @@ Commands below are for Windows PowerShell. Start in the CareerForge workspace. T
 8. **Choose an editor.** Open the workspace in IntelliJ IDEA or VS Code with Java support. Let it import the Maven project.
 9. **Choose database mode.** Use H2 for the first launch. Choose MySQL only when demonstrating an external database.
 10. **Understand persistence.** H2 is file-backed, so saved data survives restart. The configured `./data/careerforge` path resolves to `backend/data/careerforge` when using the launcher.
-11. **Prepare optional MySQL.** For MySQL, create/import the database using `database/schema.sql` as described in [database setup](../database/README.md). Skip this step for H2.
-12. **Load optional catalog data.** On a fresh MySQL schema, optionally import `database/sample-data.sql` before first application startup. The backend initializes demonstration accounts; do not duplicate an already seeded database.
-13. **Set MySQL variables when needed.** Set `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD` in this shell. Example URL: `jdbc:mysql://localhost:3306/careerforge`.
+11. **Prepare optional MySQL.** Create the database only and grant migration permissions as described in [database setup](../database/README.md). Stop and back up existing V1 data before the version-1 baseline and V2 upgrade. Skip manual SQL imports for H2.
+12. **Choose seeding.** Demo seeding is enabled by default; set `SEED_DEMO=false` when demo accounts are unwanted. Optional `database/sample-data.sql` is only for an empty catalog after Flyway migration; avoid explicit-ID collisions in already seeded data.
+13. **Set optional variables.** MySQL uses `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD` (URL: `jdbc:mysql://localhost:3306/careerforge`). Review `.env.example` and [configuration](security-configuration.md) for AI/SMTP variables; the file is not automatically loaded. Activate `smtp-file` for private local mail testing. Core workflows need no AI/SMTP credentials.
 14. **Launch the application.** Run `.\scripts\start.ps1` for H2 or `.\scripts\start.ps1 -Profile mysql` for MySQL. The script invokes Maven against `backend/pom.xml`.
-15. **Read startup output.** Wait for Spring Boot to finish startup on port 8090. Resolve errors before attempting login; the URL alone is not evidence of a running server.
+15. **Read startup output.** Confirm Flyway runs V1 then V2 on a fresh schema, or baseline 1 then V2 on compatible existing V1 data, followed by Hibernate validation and startup on port 8090. Resolve migration errors before login; do not delete data or blindly repair history.
 16. **Open the demo.** Visit `http://localhost:8090` in a browser and sign in with `student@careerforge.dev` / `Career123!`.
-17. **Exercise the student workflow.** Update the profile, select a career, add a skill, inspect the dashboard/roadmap, update a roadmap step, and add a project.
+17. **Exercise the student workflow.** Update profile/timezone, career, skills, roadmap, and projects. Exercise V2 assessments, weekly planner, progress history, saved recommendations, and resume/PDF export. Inspect availability before mentor/mail actions.
 18. **Exercise administration.** Log out, sign in with `admin@careerforge.dev` / `Career123!`, view users, and manage a temporary career or resource.
 19. **Try the API.** Import `docs/CareerForge.postman_collection.json` into Postman. Keep its cookie jar enabled, run login before protected requests, and replace example IDs with actual returned IDs.
 20. **Record and stop.** Follow [verification](verification.md), record actual observations for the college report, and stop the server with `Ctrl+C`. Restart to check persistence. Never describe an unexecuted check as passed.

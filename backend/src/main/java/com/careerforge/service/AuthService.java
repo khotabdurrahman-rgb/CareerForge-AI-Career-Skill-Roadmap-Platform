@@ -13,14 +13,20 @@ import java.util.Locale;
 @Service
 public class AuthService {
     private final CareerService data;
+    private final com.careerforge.v2.security.RecoveryService recovery;
     private final BCryptPasswordEncoder encoder=new BCryptPasswordEncoder();
-    public AuthService(CareerService data) { this.data=data; }
+    public AuthService(CareerService data,com.careerforge.v2.security.RecoveryService recovery) { this.data=data; this.recovery=recovery; }
     public String hash(String password) { return encoder.encode(password); }
     public User current(HttpServletRequest request) {
         var session=request.getSession(false);
         if(session==null || !(session.getAttribute("userId") instanceof Long id))
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Please sign in to continue");
-        return data.user(id);
+        User user=data.user(id);
+        if(!(session.getAttribute("sessionVersion") instanceof Long version) || version!=user.sessionVersion) {
+            session.invalidate();
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Please sign in again.");
+        }
+        return user;
     }
     public User admin(HttpServletRequest request) {
         User user=current(request);
@@ -30,7 +36,8 @@ public class AuthService {
     private User signIn(User user,HttpServletRequest request) {
         var previous=request.getSession(false);
         if(previous!=null) previous.invalidate();
-        request.getSession(true).setAttribute("userId",user.id); return user;
+        var session=request.getSession(true);
+        session.setAttribute("userId",user.id); session.setAttribute("sessionVersion",user.sessionVersion); return user;
     }
     @Transactional
     public User register(Registration input,HttpServletRequest request) {
@@ -39,7 +46,9 @@ public class AuthService {
         if(input.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length>72) throw CareerService.bad("Password must be at most 72 UTF-8 bytes");
         User user=new User(); user.name=input.name().trim(); user.email=email; user.passwordHash=hash(input.password());
         user.careerId=data.careers().findAll().stream().findFirst().orElseThrow(()->CareerService.bad("No career paths are configured")).id;
-        data.users().save(user); data.generateRoadmap(user); return signIn(user,request);
+        data.users().save(user); data.generateRoadmap(user);
+        recovery.request(email,"VERIFY");
+        return signIn(user,request);
     }
     public User login(Login input,HttpServletRequest request) {
         User user=data.users().findByEmail(input.email().trim().toLowerCase(Locale.ROOT))

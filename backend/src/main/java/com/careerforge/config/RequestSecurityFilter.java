@@ -15,7 +15,7 @@ public class RequestSecurityFilter extends OncePerRequestFilter {
         response.setHeader("X-Content-Type-Options","nosniff");
         response.setHeader("X-Frame-Options","DENY");
         response.setHeader("Referrer-Policy","strict-origin-when-cross-origin");
-        if(request.getRequestURI().startsWith("/api/")) {
+        if(request.getServletPath().startsWith("/api/") || request.getRequestURI().substring(request.getContextPath().length()).startsWith("/api/")) {
             response.setHeader("Cache-Control","no-store");
             String method=request.getMethod();
             if(!method.equals("GET") && !method.equals("HEAD") && !method.equals("OPTIONS")) {

@@ -9,7 +9,8 @@ public final class Requests {
     public record Registration(@NotBlank @Size(max=100) String name,@NotBlank @Email @Size(max=255) String email,
                                @NotBlank @Size(min=8,max=72) String password) {}
     public record Profile(@NotBlank @Size(max=100) String name,@Size(max=255) String course,
-                          @Size(max=255) String college,@Size(max=50) String currentYear,@NotNull Long careerId) {}
+                          @Size(max=255) String college,@Size(max=50) String currentYear,@NotNull Long careerId,
+                          @Size(max=255) String timezone) {}
     public record SkillInput(@NotNull Long skillId,@NotBlank String level) {}
     public record Status(@NotBlank String status) {}
     public record ProjectInput(@NotBlank @Size(max=150) String name,@Size(max=2000) String description,

@@ -1,0 +1,92 @@
+{
+  "Java": [
+    {"prompt":"Which comparison checks whether two non-null String objects contain the same characters?","options":["a.equals(b)","a == b","a = b","a instanceof b"],"correctOptionIndex":0,"explanation":"String.equals compares character content; == compares object identity."},
+    {"prompt":"Which collection prevents duplicate elements?","options":["ArrayList","HashSet","LinkedList","ArrayDeque"],"correctOptionIndex":1,"explanation":"A Set contains no duplicate elements according to equality."},
+    {"prompt":"What happens when an int expression divides 7 by 2?","options":["It returns 3.5","It throws an exception","It returns 3","It returns 4"],"correctOptionIndex":2,"explanation":"Integer division truncates the fractional part toward zero."}
+  ],
+  "HTML": [
+    {"prompt":"Which element represents the main navigation links?","options":["nav","aside","footer","em"],"correctOptionIndex":0,"explanation":"The nav element identifies a section of navigation links."},
+    {"prompt":"How does a label explicitly associate with an input?","options":["Its class matches the input class","Its for value matches the input id","Its name matches the placeholder","Its title matches the input type"],"correctOptionIndex":1,"explanation":"A label's for attribute references the associated control's id."},
+    {"prompt":"Which attribute supplies a text alternative for an image?","options":["src","href","alt","target"],"correctOptionIndex":2,"explanation":"The alt attribute provides an image's text alternative."}
+  ],
+  "CSS": [
+    {"prompt":"With box-sizing: border-box, what does a declared width include?","options":["Content only","Content, padding and border","Content and margin","Margin and border only"],"correctOptionIndex":1,"explanation":"Border-box includes padding and border in the specified width, but excludes margins."},
+    {"prompt":"Which selector has the highest specificity among these?","options":["p",".notice","#notice","*"],"correctOptionIndex":2,"explanation":"An ID selector has higher specificity than a class or type selector."},
+    {"prompt":"In a flex row, which property aligns items along the main axis?","options":["justify-content","align-items","font-weight","overflow"],"correctOptionIndex":0,"explanation":"justify-content distributes flex items along the main axis."}
+  ],
+  "JavaScript": [
+    {"prompt":"What is the value of 5 === '5'?","options":["true","false","5","undefined"],"correctOptionIndex":1,"explanation":"Strict equality does not coerce a string to a number."},
+    {"prompt":"Which array method returns a new array by transforming every element?","options":["push","pop","map","forEach"],"correctOptionIndex":2,"explanation":"map collects the result of the callback for each element into a new array."},
+    {"prompt":"What does an async function always return?","options":["A Promise","A boolean","A DOM node","A synchronous iterator"],"correctOptionIndex":0,"explanation":"Async functions return promises, including when they return a plain value."}
+  ],
+  "Spring Boot": [
+    {"prompt":"Which annotation identifies a controller whose methods write response bodies by default?","options":["Entity","RestController","Repository","ConfigurationProperties"],"correctOptionIndex":1,"explanation":"RestController combines Controller with ResponseBody semantics."},
+    {"prompt":"What is constructor injection used for?","options":["Creating a database index","Defining a URL path","Supplying a bean's dependencies","Disabling component scanning"],"correctOptionIndex":2,"explanation":"Spring can supply managed dependencies through a bean's constructor."},
+    {"prompt":"What does @Transactional normally do when an unchecked exception escapes a service method?","options":["Rolls back the transaction","Commits partial changes","Retries forever","Deletes the database"],"correctOptionIndex":0,"explanation":"The default transaction rule rolls back on RuntimeException and Error."}
+  ],
+  "MySQL": [
+    {"prompt":"Which constraint uniquely identifies each table row and disallows NULL?","options":["DEFAULT","PRIMARY KEY","CHECK only","FOREIGN KEY"],"correctOptionIndex":1,"explanation":"A primary key is unique and its columns cannot be NULL."},
+    {"prompt":"Which MySQL storage engine supports transactions and foreign keys?","options":["MyISAM","CSV","InnoDB","MEMORY"],"correctOptionIndex":2,"explanation":"InnoDB supports ACID transactions and foreign key constraints."},
+    {"prompt":"What is a likely tradeoff of adding an index to a frequently filtered column?","options":["Faster reads but additional storage and write work","All writes become free","The table loses its primary key","NULL values are automatically deleted"],"correctOptionIndex":0,"explanation":"Indexes can speed lookups but need storage and maintenance during writes."}
+  ],
+  "REST API": [
+    {"prompt":"Which HTTP method retrieves a resource without requesting a state change?","options":["POST","GET","PATCH","DELETE"],"correctOptionIndex":1,"explanation":"GET is a safe retrieval method."},
+    {"prompt":"Which response status indicates successful creation of a resource?","options":["404","500","201","401"],"correctOptionIndex":2,"explanation":"201 Created indicates that a request created a resource."},
+    {"prompt":"What does idempotent mean for an HTTP operation?","options":["Repeating it has the same intended effect as performing it once","It always returns identical headers","It requires no authentication","It never uses a request body"],"correctOptionIndex":0,"explanation":"Idempotency concerns the intended server-side effect, not identical response messages."}
+  ],
+  "Git": [
+    {"prompt":"Which command stages a file for the next commit?","options":["git log","git add","git fetch","git branch"],"correctOptionIndex":1,"explanation":"git add updates the index, which holds the content for the next commit."},
+    {"prompt":"What does git fetch do?","options":["Automatically merges into the current branch","Deletes local commits","Downloads remote objects and updates remote-tracking refs","Stages all local edits"],"correctOptionIndex":2,"explanation":"Fetch obtains remote history without automatically merging it into your working branch."},
+    {"prompt":"Which command creates a new commit that reverses an earlier commit?","options":["git revert","git status","git init","git diff"],"correctOptionIndex":0,"explanation":"git revert records an inverse change as a new commit."}
+  ],
+  "Python": [
+    {"prompt":"Which built-in sequence is immutable?","options":["list","tuple","dict","set"],"correctOptionIndex":1,"explanation":"A tuple's element references cannot be changed after creation."},
+    {"prompt":"What is list(range(3))?","options":["[1, 2, 3]","[0, 1, 2, 3]","[0, 1, 2]","[3]"],"correctOptionIndex":2,"explanation":"range starts at zero by default and excludes its stop value."},
+    {"prompt":"Which construct reliably closes an opened file when its block exits?","options":["with open(...) as f","if open(...)","while open(...)","global f"],"correctOptionIndex":0,"explanation":"The file context manager closes the file even if the block raises an exception."}
+  ],
+  "Statistics": [
+    {"prompt":"Which measure of center is least affected by one extremely large observation?","options":["Mean","Median","Sum","Maximum"],"correctOptionIndex":1,"explanation":"The median depends on the middle rank and is robust to extreme observations."},
+    {"prompt":"What does a correlation between two variables establish by itself?","options":["That one causes the other","That they have equal means","An association, without establishing causation","That there is no confounding"],"correctOptionIndex":2,"explanation":"Correlation describes association; causal conclusions require additional evidence."},
+    {"prompt":"What is the probability of heads on one fair coin toss?","options":["0.5","0","1","0.25"],"correctOptionIndex":0,"explanation":"A fair coin has two equally likely outcomes, so heads has probability one half."}
+  ],
+  "Pandas": [
+    {"prompt":"Which pandas structure represents a two-dimensional labeled table?","options":["Series","DataFrame","Index only","Timestamp"],"correctOptionIndex":1,"explanation":"A DataFrame has labeled rows and columns."},
+    {"prompt":"Which expression selects rows where column age is greater than 18?","options":["df['age' > 18]","df.age(18)","df[df['age'] > 18]","df.drop('age')"],"correctOptionIndex":2,"explanation":"A boolean Series can be used to filter DataFrame rows."},
+    {"prompt":"Which method detects missing values?","options":["isna()","sort_values()","head()","rename()"],"correctOptionIndex":0,"explanation":"isna returns a boolean mask indicating missing values."}
+  ],
+  "NumPy": [
+    {"prompt":"What does np.array([1, 2, 3]) * 2 produce?","options":["[1, 2, 3, 1, 2, 3]","An array containing [2, 4, 6]","An error for all integer arrays","The scalar 12"],"correctOptionIndex":1,"explanation":"NumPy applies scalar multiplication element by element."},
+    {"prompt":"What is the shape of np.zeros((2, 3))?","options":["(3, 2)","(6,)","(2, 3)","(2,)"],"correctOptionIndex":2,"explanation":"The array has two rows and three columns."},
+    {"prompt":"Which pair of shapes can be broadcast together?","options":["(3, 1) and (1, 4)","(3, 2) and (3, 4)","(2,) and (3,)","(2, 3) and (2, 2)"],"correctOptionIndex":0,"explanation":"Trailing dimensions are compatible when equal or one; the result here is (3, 4)."}
+  ],
+  "Machine Learning": [
+    {"prompt":"Why keep a test set separate from training?","options":["To increase the number of training labels","To estimate performance on unseen data","To guarantee perfect accuracy","To replace all validation"],"correctOptionIndex":1,"explanation":"Held-out test data measures generalization without training on those examples."},
+    {"prompt":"A model performs very well on training data and poorly on unseen data. What is this called?","options":["Underfitting","Normalization","Overfitting","Clustering"],"correctOptionIndex":2,"explanation":"Overfitting captures training-specific patterns that do not generalize."},
+    {"prompt":"Which task predicts a continuous numerical value?","options":["Regression","Classification","Tokenization","Association rules"],"correctOptionIndex":0,"explanation":"Regression predicts numerical targets such as price or temperature."}
+  ],
+  "SQL": [
+    {"prompt":"Which clause filters rows before grouping?","options":["HAVING","WHERE","ORDER BY","LIMIT"],"correctOptionIndex":1,"explanation":"WHERE filters input rows; HAVING filters groups after aggregation."},
+    {"prompt":"Which join retains all left-table rows even when there is no right-table match?","options":["INNER JOIN","CROSS JOIN","LEFT JOIN","SELF JOIN only"],"correctOptionIndex":2,"explanation":"LEFT JOIN retains unmatched left rows and supplies NULL for right-side columns."},
+    {"prompt":"How do you test whether a column contains SQL NULL?","options":["IS NULL","= NULL","== NULL","LIKE NULL"],"correctOptionIndex":0,"explanation":"NULL uses three-valued logic; IS NULL is the proper missing-value test."}
+  ],
+  "Data Visualization": [
+    {"prompt":"Which chart is usually suitable for comparing values across discrete categories?","options":["Pie chart with hundreds of slices","Bar chart","Unlabeled image","Contour map only"],"correctOptionIndex":1,"explanation":"Bar lengths support comparisons across categories."},
+    {"prompt":"Which chart helps inspect the relationship between two numerical variables?","options":["Single-value gauge","Stacked text table","Scatter plot","Word cloud"],"correctOptionIndex":2,"explanation":"Scatter plots show paired numerical observations and their patterns."},
+    {"prompt":"Why should a bar chart's value axis generally start at zero?","options":["Bar lengths encode magnitude and a truncated baseline can distort comparisons","It increases the sample size","It removes all outliers","It guarantees causation"],"correctOptionIndex":0,"explanation":"Because lengths encode values, truncating the baseline can exaggerate differences."}
+  ],
+  "React": [
+    {"prompt":"Which Hook provides local component state?","options":["useEffect","useState","useRef only","useContext only"],"correctOptionIndex":1,"explanation":"useState provides a state value and a setter that schedules a render."},
+    {"prompt":"What is the preferred key for a list item that can be reordered?","options":["A newly generated random value on every render","The current array index","A stable unique ID from the data","The same constant for every item"],"correctOptionIndex":2,"explanation":"Stable keys let React preserve each item's identity across reordering."},
+    {"prompt":"How should an array held in state be updated?","options":["Create a new array and pass it to the setter","Mutate it with push and omit the setter","Assign directly to the state variable","Change the DOM manually"],"correctOptionIndex":0,"explanation":"Treat state as immutable and supply a new array to the state setter."}
+  ],
+  "C": [
+    {"prompt":"Which operator obtains the address of a variable?","options":["*","&","%","!"],"correctOptionIndex":1,"explanation":"The unary address-of operator & obtains a pointer to an object."},
+    {"prompt":"What terminates a conventional C string?","options":["A space","A newline in every case","A null character '\\0'","The letter EOF"],"correctOptionIndex":2,"explanation":"C strings are character sequences terminated by a zero-valued null character."},
+    {"prompt":"Which function releases memory allocated by malloc?","options":["free","delete","release","close"],"correctOptionIndex":0,"explanation":"free releases dynamically allocated memory from malloc and related allocation functions."}
+  ],
+  "Data Structures": [
+    {"prompt":"Which structure uses last-in, first-out removal?","options":["Queue","Stack","Sorted set","Hash table"],"correctOptionIndex":1,"explanation":"A stack removes the most recently pushed item first."},
+    {"prompt":"What is binary search's time complexity on a sorted random-access array?","options":["O(n squared)","O(n)","O(log n)","O(n log n)"],"correctOptionIndex":2,"explanation":"Each comparison halves the remaining search interval."},
+    {"prompt":"Under good hashing and controlled load, what is the average lookup complexity of a hash table?","options":["O(1)","O(n squared)","O(log n) guaranteed in every implementation","O(n log n)"],"correctOptionIndex":0,"explanation":"Good hash distribution gives expected constant-time lookup, though worst cases can be slower."}
+  ]
+}

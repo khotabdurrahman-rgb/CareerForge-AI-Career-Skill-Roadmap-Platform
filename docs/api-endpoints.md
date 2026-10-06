@@ -24,7 +24,7 @@ IDs are database IDs, not list indices. `skillId` refers to the skill catalog; t
 | DELETE | `/api/skills/{id}` | Owner | Removes user-skill record; regenerates roadmap |
 | GET | `/api/careers` | Public | Career catalog with required skills |
 | GET | `/api/careers/{id}` | Public | One career with required skills |
-| PUT | `/api/profile` | Signed in | `{name,course,college,currentYear,careerId}`; saves profile and updates roadmap |
+| PUT | `/api/profile` | Signed in | `{name,course,college,currentYear,careerId,timezone?}`; saves profile and updates roadmap |
 | PUT | `/api/roadmap/{id}` | Owner | `{status}`; updates selected-career step |
 | GET | `/api/roadmap` | Signed in | Current selected-career roadmap; synchronizes generated steps |
 | GET | `/api/projects` | Signed in | Current user's projects |
@@ -71,7 +71,7 @@ Registration (use a new email each time):
 Profile:
 
 ```json
-{"name":"Demo Student","course":"B.Sc. Computer Science","college":"Rizvi College","currentYear":"Third Year","careerId":1}
+{"name":"Demo Student","course":"B.Sc. Computer Science","college":"Rizvi College","currentYear":"Third Year","careerId":1,"timezone":"Asia/Kolkata"}
 ```
 
 User skill and roadmap update:
@@ -113,6 +113,7 @@ The GitHub URL is an illustrative placeholder, not evidence of an existing repos
 | Profile course / college | Optional; at most 255 characters each |
 | Profile currentYear | Optional string; at most 50 characters |
 | Profile careerId | Required; must identify an existing career |
+| Profile timezone | Optional; at most 255 characters; valid Java ZoneId such as `Asia/Kolkata` |
 | Skill level | Exactly `Beginner`, `Intermediate`, or `Advanced` |
 | Roadmap status | Exactly `NOT_STARTED`, `IN_PROGRESS`, or `COMPLETED` |
 | Project status | Exactly `IN_PROGRESS` or `COMPLETED` |
@@ -147,7 +148,69 @@ Handled errors use a JSON `message`, for example:
 | 404 | Referenced record not found |
 | 409 | Duplicate email or database uniqueness/reference conflict |
 
-The current controllers return **200** for successful requests, including creates and deletes. Creates/updates return the entity; deletes and logout return `{message}`. The supplied Postman checks expect 200 for success and explicit error codes for negative examples.
+The current controllers return **200** for successful requests, including creates and deletes. V1 creates/updates generally return entities; V2 learning/extras routes use safe DTOs. Deletes and logout return `{message}`. PDF export returns binary PDF. The supplied Postman examples are not executed test evidence.
+
+## V2 account recovery and verification
+
+| Method | Path | Access | Body / result |
+| --- | --- | --- | --- |
+| GET | `/api/auth/config` | Public | `{emailAvailable,localEmail,message}`; no secrets |
+| POST | `/api/auth/forgot-password` | Public | `{email}`; generic message whether eligible or not |
+| POST | `/api/auth/verification` | Public | `{email}`; generic verification-email request response |
+| POST | `/api/auth/reset-password` | Public | `{token,password}`; resets password and invalidates old sessions |
+| POST | `/api/auth/verify-email` | Public | `{token}`; marks email verified |
+
+Recovery/verification requests are limited to five per client IP per 15 minutes; token submissions to 15 per IP per 15 minutes. Token strings are nonblank, max 200. Reset passwords have the registration length/UTF-8 limits. Reset links expire after 30 minutes; verification links after 24 hours. Tokens are single-use, purpose-bound, and hashed in storage. Invalid/expired/used links return 400. New requests invalidate earlier unused tokens of that purpose. With SMTP absent, requests remain generic and no delivery is claimed. `smtp-file` writes private `.eml` messages under `backend/data/mail` from the backend working directory. Obtain test tokens there; never capture raw tokens in normal API/UI responses or screenshots. Reset requires signing in again. `emailVerified` and `timezone` are public user fields; `sessionVersion` and password hashes are private.
+
+## V2 mentor
+
+| Method | Path | Access | Body / result |
+| --- | --- | --- | --- |
+| GET | `/api/mentor` | Signed in | `{available,message,messages,dailyLimit,remaining}` |
+| POST | `/api/mentor` | Signed in | `{message}`; returns updated overview and history |
+| DELETE | `/api/mentor/history` | Signed in | Clears this user's history; usage quota remains |
+
+Messages are nonblank, max 1000 characters. Default limit is 20 reserved requests per UTC day; attempts that fail at the provider still consume reserved quota. A second in-flight request for the same user returns 409, exhausted quota 429, missing API key 503, provider/unusable output errors 502, and timeout 504. Only successful answers persist user/assistant messages. Overview returns the most recent 60 messages chronologically; the provider receives the last 12 plus the question and learning context. OpenAI requests use `store:false`; local database history persists separately. Model defaults to `gpt-4.1-mini`. The `careerforge.ai.url` property can be overridden for isolated REST transport tests; use the official endpoint in normal operation. See [configuration](security-configuration.md) and the [Responses reference](https://developers.openai.com/api/reference/python/resources/responses/methods/create).
+
+## V2 assessments and weekly planner
+
+All routes below require a session. Full backend-owned behavior is in [the learning contract](v2-learning-contract.md).
+
+| Method | Path | Body / result |
+| --- | --- | --- |
+| GET | `/api/assessments` | `{skills,attempts}` with best scores and attempt history |
+| POST | `/api/assessments/{skillId}/start` | No body; `{id,skillId,skillName,expiresAt,questions:[{id,prompt,options}]}` |
+| POST | `/api/assessments/sessions/{sessionId}/submit` | `{answers:[{questionId,optionIndex}]}`; `{attempt,feedback}` |
+| GET | `/api/planner?week=YYYY-MM-DD` | `{weekStart,weekEnd,timezone,goals,tasks,overdue,plannedMinutes,completedMinutes}` |
+| POST / PUT | `/api/planner/goals` / `/api/planner/goals/{id}` | `{title,weekStart,targetMinutes}` |
+| DELETE | `/api/planner/goals/{id}` | Removes owned goal |
+| POST / PUT | `/api/planner/tasks` / `/api/planner/tasks/{id}` | `{title,skillId?,roadmapStepId?,dueDate,estimatedMinutes,status,weekStart}` |
+| DELETE | `/api/planner/tasks/{id}` | Removes owned task |
+
+Answer IDs must match the started session exactly once; option indices are zero-based. Scoring is server-side against the stored snapshot; start never exposes answer keys. Sessions expire after 60 minutes (410); resubmission returns 409; missing/other-user sessions return 404. Assessments do not change self-reported skills or roadmap readiness.
+
+Weeks normalize to Monday-Sunday and default to the user's timezone. Goal target minutes are 1-10080; task minutes 1-1440; titles max 255. Due dates must fall within the normalized week. Task statuses are `NOT_STARTED`, `IN_PROGRESS`, `COMPLETED`. Owned goal/task lookup failures return 404. Optional roadmap links must belong to the user and active career; skill links must match. Completing a linked task completes its roadmap step with the existing skill side effects; reopening/deleting a task does not undo them. Overdue tasks include all incomplete tasks before today's local date, across weeks.
+
+## V2 resume, comparison, recommendations, and progress
+
+All routes require a session. Full backend-owned behavior is in [the extras contract](v2-extras-contract.md).
+
+| Method | Path | Body / result |
+| --- | --- | --- |
+| GET | `/api/resume` | `{profile,user,skills,projects}` |
+| PUT | `/api/resume` | Complete resume-fields body; returns current bundle |
+| GET | `/api/resume/pdf` | `application/pdf`, attachment `careerforge-resume.pdf`, `Cache-Control: no-store` |
+| GET | `/api/careers/compare?left={id}&right={id}` | `{left,right,sharedSkills,estimateExplanation}`; selected career unchanged |
+| GET | `/api/recommendations` | Curated recommendation DTOs with saved/project state |
+| POST / DELETE | `/api/recommendations/{id}/save` | Save/unsave recommendation; returns recommendation |
+| POST | `/api/recommendations/{id}/portfolio` | Add recommendation to portfolio; returns project DTO |
+| GET | `/api/progress` | `{events,trend,streak,currentTimezone,streakDefinition}` |
+
+Resume fields: `headline` (max 200), `summary` (4000), `phone` (60), `location` (200), `website` (1000), `education`, `experience`, `achievements` (4000 each). Include required booleans `includeSkills`, `includeProjects`, `includeEducation`, `includeExperience`, `includeAchievements`. PUT replaces the editable fields; user/skills/projects are sourced from current records. PDF uses PDFBox 3.0.4. Comparison estimates are guidance, not measured course duration or employment probability. Progress shows up to the latest 500 events; streak is consecutive local activity dates ending today or yesterday. Readiness snapshots reflect declared skill coverage, not assessment scores. Historical scalar references are retained when linked roadmap/project/career records disappear.
+
+Resume JSON is limited to 20000 encoded characters; a nonblank website must be absolute HTTP(S), have a host, and contain no credentials. PDF uses bundled Noto Sans for supported glyphs; unsupported scripts/glyphs use fallback, and full complex-script shaping is not claimed. Comparison uses 20 estimated hours per missing skill, excluding capstone work. Recommendation listing filters the selected career and declared prerequisites; save/unsave is idempotent. Adding to portfolio returns the same previously created project; if it was deleted, the durable tombstone returns 409 rather than creating another project.
+
+PDF clients should send `Accept: application/pdf, application/json` (or `*/*`) so successful PDF responses and JSON errors are accepted. A JSON-only Accept header can produce 406.
 
 ## Postman workflow
 

@@ -1,31 +1,19 @@
-# Database setup
+# Database setup and migrations
 
-H2 is the default persistent local demo database. These SQL files target **MySQL**, not H2. JPA maps the same eight entities: `users`, `skills`, `user_skills`, `careers`, `career_skills`, `roadmap_steps`, `projects`, and `resources`. There is no separate `roadmaps` table.
+H2 in MySQL mode is the persistent default at `backend/data/careerforge` when launched from the backend working directory. The `mysql` profile connects to an existing MySQL database. Flyway owns schema changes; Hibernate uses `ddl-auto=validate`.
 
-## Import
+## Fresh MySQL installation
 
-Using MySQL Workbench, open and execute `schema.sql`. For an optional illustrative catalog, execute `sample-data.sql` on the fresh schema before application startup. In the MySQL client, the equivalent commands are:
-
-```sql
-SOURCE C:/path/to/CareerForge/database/schema.sql;
-SOURCE C:/path/to/CareerForge/database/sample-data.sql;
-```
-
-Replace the path with the actual workspace. The schema creates `careerforge` if absent and never drops tables. `CREATE TABLE IF NOT EXISTS` does not repair an incompatible existing schema; inspect it before importing into an existing installation. Sample data uses explicit IDs and must be imported once. Import without the client's continue-on-error option; roll back a failed seed transaction before retrying.
-
-Demo users are initialized by the backend with BCrypt-hashed passwords when demo seeding is enabled and the users table is empty. Sample SQL intentionally contains no plaintext passwords or implementation-specific password hashes. Allow the application initializer to create `student@careerforge.dev` and `admin@careerforge.dev` with `Career123!`. The sample catalog matches the Java seed's 18 skills, four careers, and 18 resources on a fresh import; query actual IDs before API mutations. Java initialization adds the student's Java, HTML, CSS, Git, and MySQL skills (5/8 requirements, 62.5% readiness), roadmap, and three projects. Set `SEED_DEMO=false` to suppress demo-user creation; catalog initialization still occurs when its tables are empty.
-
-## Application account
-
-Run as a MySQL administrator, replacing the password before execution:
+Create the database only with an administrator:
 
 ```sql
+CREATE DATABASE IF NOT EXISTS careerforge CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'careerforge_app'@'localhost' IDENTIFIED BY 'replace-with-local-password';
-GRANT SELECT, INSERT, UPDATE, DELETE
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES
     ON careerforge.* TO 'careerforge_app'@'localhost';
 ```
 
-The MySQL profile uses `ddl-auto=validate`: import the schema first with an administrator account; the application needs only data access. Adjust the host if the database and application are on different machines.
+Use the appropriate existing account instead of repeating `CREATE USER`. Flyway needs schema-change permissions and access to `flyway_schema_history`; old data-only grants are insufficient. Scope grants to this database and adapt the host.
 
 ```powershell
 $env:DB_URL = 'jdbc:mysql://localhost:3306/careerforge'
@@ -34,24 +22,39 @@ $env:DB_PASSWORD = 'replace-with-local-password'
 .\scripts\start.ps1 -Profile mysql
 ```
 
-## Optional XAMPP / MariaDB environment
+An empty database runs V1 then V2 automatically. Do not import a full V2 schema before startup. Optional `sample-data.sql` is for an empty catalog after migration, with `SEED_DEMO=false`; avoid explicit-ID collisions in a seeded database. It contains no account passwords. Application catalog initialization still runs when catalog tables are empty, so manual seed imports are generally unnecessary.
 
-**2026-10-06:** the schema imported successfully using XAMPP's MariaDB 10.4 with isolated data at `.tools/mysql-data` and database port **3307**. Live API checks passed **17 assertions** using the MySQL application profile on port **8091**. H2 on port **8090** also passed 17 assertions. Oracle MySQL was not installed or tested; these results establish MariaDB compatibility for the exercised workflows.
+## Upgrade existing V1 data
 
-For an already running local MariaDB server, set `DB_URL` to `jdbc:mysql://localhost:3307/careerforge`, set credentials for that server, and optionally set `$env:PORT = '8091'` before `.\scripts\start.ps1 -Profile mysql`. This guide does not start or initialize a XAMPP service. Port 3306 and application port 8090 remain the normal examples. Remove the override with `Remove-Item Env:PORT` before returning to the default H2 demo. Do not point multiple database processes at the same data directory.
+1. Stop all application instances and back up the database. Copy H2 files only while stopped.
+2. Confirm the tables match V1. Automatic baselining is a marker, not schema repair or a compatibility check.
+3. Verify the database URL and grant migration permissions.
+4. Start V2. A compatible nonempty schema without Flyway history receives a version-1 baseline, skips V1, then runs V2.
+5. Inspect `flyway_schema_history`, confirm Hibernate validation, and compare existing IDs/records with the backup. Existing users receive `timezone='Asia/Kolkata'`, `email_verified=false`, and `session_version=0`.
+6. Restart and verify no migration runs again. Record actual evidence in [verification](../docs/verification.md).
 
-## Constraints
+V2 does not drop V1 tables or reset records. MySQL DDL can commit before a migration fails: inspect partial changes and restore the backup when necessary. Never blindly rerun the reference SQL, hide errors with repair, or edit an applied migration. Future changes need a new migration version.
 
-| Constraint | Purpose |
+## SQL file roles
+
+| File | Purpose |
 | --- | --- |
-| Unique user email | Prevent duplicate identities |
-| Unique skill name | Keep one catalog entry per skill |
-| Unique `(user_id, skill_id)` | Keep one level per user skill |
-| Composite career-skill primary key | Prevent duplicate required skills |
-| Unique roadmap `(user_id, career_id, title)` | Prevent duplicate generated steps |
-| Foreign keys | Prevent orphan references |
-| User child cascades | Remove owned skills, roadmap steps, and projects on user deletion |
-| Nullable user career with `SET NULL` | Retain users when a career is deleted |
-| Roadmap index `(user_id, position)` | Support ordered per-user roadmap lookup |
+| `schema.sql` | Historical manual V1 MySQL bootstrap with database/engine directives |
+| `sample-data.sql` | Optional one-time catalog examples with explicit IDs |
+| `../backend/src/main/resources/db/migration/V1__initial_schema.sql` | Executable V1 for H2 MySQL mode and MySQL |
+| `../backend/src/main/resources/db/migration/V2__careerforge_v2.sql` | Executable additive V2 |
+| `migrations/V2__careerforge_v2.sql` | Reference copy only; not another Flyway location or manual bootstrap |
 
-Statuses and levels are stored as strings so they can match application values without MySQL-specific enum mappings. `current_year` is a string (for example, `Third Year`). A roadmap step may have a null `skill_id` for the portfolio capstone. Check the API reference for supported values. Neither readiness nor dashboard totals are stored; they are derived from relationships. The API blocks deletion of a career followed by students, even though direct SQL has a `SET NULL` fallback. Back up persistent data before schema changes. No destructive reset script is supplied.
+A previously imported `schema.sql` is acceptable V1: startup baselines it then applies V2. Keep it at V1 to avoid V2 running twice. Do not import historical MySQL scripts into H2.
+
+V2 uses the Flyway placeholder `${largeTextType}` for `quiz_sessions.question_set` and `resume_profiles.fields_json`. The default H2 configuration substitutes `CLOB`; the MySQL profile substitutes `LONGTEXT`. The reference copy is byte-identical SQL, but cannot be imported manually until both placeholder occurrences are substituted for the target database. Normal application startup performs substitution automatically. Never manually apply that copy to an already migrated database. After the first live migration/checksum is recorded, freeze the SQL and placeholder configuration for that database; later changes require a new migration.
+
+## Model and integrity
+
+V1 has users, skills, user skills, careers, career skills, roadmap steps, projects, and resources. V2 adds account tokens, mentor messages/usage, assessment attempts/quiz sessions, planner goals/tasks, progress events, saved recommendations, and resume profiles. Exact columns follow entity annotations and learning/extras contracts.
+
+V1 uniqueness covers email, skill name, user/skill, career/skill, and roadmap user/career/title. V2 adds unique token hashes, mentor user/date, assessment session, resume user, and recommendation user/identifier. Every V2 user reference has a foreign key, including scalar `user_id` fields in progress, saved recommendations, and resumes. Historic career/project/roadmap scalar references deliberately have no foreign key. Roadmap skill is nullable for capstones. Readiness remains derived.
+
+## Compatibility evidence
+
+On 2026-10-06, isolated H2/Flyway fresh, baseline-upgrade, restart/no-op, and checksum validation checks succeeded. The parent separately reported a successful live original-H2-data upgrade, retained records, Hibernate validation with TIMESTAMP/UTC Instant mapping, and the 2.0.0 JAR running on port 8090. Migration SQL is frozen. Earlier MariaDB results are historical V1 evidence; V2 MySQL/MariaDB and Oracle MySQL execution remain pending. An existing MariaDB server on port 3307 uses `jdbc:mysql://localhost:3307/careerforge`; this guide does not start a database service.
